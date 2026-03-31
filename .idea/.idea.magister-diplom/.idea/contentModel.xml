@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\kgorbenko\AppData\Local\JetBrains\Rider2020.3\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\kgorbenko\AppData\Local\JetBrains\Rider2020.3\resharper-host\Local\Transient\Rider\v203\SolutionCaches\_magister-diplom.1209542661.00" t="ExcludeRecursive" />
+    <e p="E:\magister-diplom_working\magister-diplom" t="IncludeFlat">
+      <e p="magister-diplom.sln" t="IncludeFlat" />
+      <e p="newAlgorithm" t="IncludeRecursive">
+        <e p="App.config" t="Include" />
+        <e p="BatchTypeClaims.cs" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="FirstLevel.cs" t="Include" />
+        <e p="Form1.cs" t="Include" />
+        <e p="Form1.Designer.cs" t="Include" />
+        <e p="Form1.resx" t="Include" />
+        <e p="GAA.cs" t="Include" />
+        <e p="GaaSecondLevel.cs" t="Include" />
+        <e p="Groups.cs" t="Include" />
+        <e p="Kit.cs" t="Include" />
+        <e p="magister-diplom.csproj" t="IncludeRecursive" />
+        <e p="obj" t="ExcludeRecursive" />
+        <e p="OldFirstLevel.cs" t="Include" />
+        <e p="OldSecondLevel.cs" t="Include" />
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="AssemblyInfo.cs" t="Include" />
+          <e p="Resources.Designer.cs" t="Include" />
+          <e p="Resources.resx" t="Include" />
+          <e p="Settings.Designer.cs" t="Include" />
+          <e p="Settings.settings" t="Include" />
+        </e>
+        <e p="Sets.cs" t="Include" />
+        <e p="Shedule.cs" t="Include" />
+        <e p="SheduleElement.cs" t="Include" />
+      </e>
+      <e p="packages" t="ExcludeRecursive" />
+    </e>
+  </component>
+</project>

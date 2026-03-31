@@ -1,0 +1,135 @@
+public override bool Build(List<List<int>> _matrixA)
+{
+
+    List<List<int>> matrixA = ListUtils.MatrixIntDeepCopy(_matrixA);
+
+    int dataType, maxBatchCount = 0, batch = 0, batchCount = 0;
+
+    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        maxBatchCount = Math.Max(maxBatchCount, matrixA[dataType].Count);
+
+    Dictionary<int, double> m = new Dictionary<int, double>(capacity: this.config.dataTypesCount);
+
+    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+    {
+        double sum = 0;
+        for (int device = 1; device < this.config.deviceCount; device++)
+            sum +=
+                (double)this.config.proccessingTime[device][dataType] /
+                (double)this.config.proccessingTime[device - 1][dataType];
+        m.Add(dataType, sum);
+    }
+
+    List<int> dataTypes = new List<int>(capacity: this.config.dataTypesCount);
+
+    while (m.Any())
+    {
+        int myDataType = m.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+        dataTypes.Add(myDataType);
+        m.Remove(myDataType);
+    }
+
+    // Сортируем матрицу A
+    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        matrixA[dataType].Sort();
+
+    batch = dataType = 0;
+    
+    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
+
+        // Увеличиваем общее количество пакетов заданий
+        batchCount += matrixA[_dataType].Count();
+
+    // П.2 Добавляем 
+    this.schedule = new List<Batch>(batchCount) { new Batch(
+        dataTypes[dataType],
+        matrixA[dataTypes[dataType]][batch]
+    )};
+    dataType++;
+
+    // Если логирование установлено
+    if (Form1.loggingOn) {
+        CalcStartProcessing();
+        fstream.WriteScheduleAsTable(schedule);
+    }
+
+    // П.3 Инициализируем матрицу Y
+    this.matrixY = new List<List<int>>(capacity: this.config.deviceCount);
+    for (int device = 0; device < this.config.deviceCount; device++)
+    {
+        this.matrixY.Add(new List<int>());
+        this.matrixY[device].Add(1);
+    }
+
+    // Если логирование установлено
+    if (Form1.loggingOn)
+    {
+        fstream.WriteMatrixYAsTable(matrixY);
+    }
+
+    // Для каждого типа данных выполняем обрабоку
+    for (; dataType < this.config.dataTypesCount; dataType++)
+    {
+
+        // Добавляем ПЗ в расписание 
+        this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
+        for (int device = 0; device < this.config.deviceCount; device++)
+            this.matrixY[device].Add(0);
+        
+        CalcStartProcessing();
+
+        // Если логирование установлено
+        if (Form1.loggingOn)
+        {
+            fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, preMConfig);
+        }
+
+        // Если не было найдено расписания удовлетворяющему условию надёжности
+        if (!this.SearchByPosition(5)) {
+
+            UnsetLogFile();
+            return false;
+        }
+    }
+
+    // Увеличиваем индекс вставляемого пакета задания
+    batch++;
+
+    // Выполняем обработку
+    while (batch < maxBatchCount)
+    {
+
+        // Выполняем обработку для каждого типа данных
+        for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        {
+
+            // Если индекс пакета превышает максимальный размер пакетов для типа данных dataType
+            if (batch >= matrixA[dataTypes[dataType]].Count)
+
+                // Продолжаем обработку для следующего типа данных
+                continue;
+
+            // Добавляем ПЗ в расписание 
+            this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
+            for (int device = 0; device < this.config.deviceCount; device++)
+                this.matrixY[device].Add(0);
+
+            // Если не было найдено расписания удовлетворяющему условию надёжности
+            if (!this.SearchByPosition(5)) {
+
+                UnsetLogFile();
+                return false;
+            }
+        }
+
+        // Увеличиваем индекс пакета
+        batch++;
+    }
+
+    for (int device = 0; device < matrixY.Count(); device++)
+        for (int batchIndex = 0; batchIndex < matrixY[device].Count(); batchIndex++)
+            matrixY[device][batchIndex] = 1;
+
+    bool b = OptimizeMatrixY();
+    return b;
+}

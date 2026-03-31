@@ -1,0 +1,213 @@
+public void GenetateSolutionWithPremaintenance(string fileName, PreMConfig preMConfig)
+{
+
+    // Инициализируем значения
+    compositionNumber = 1;
+
+    // Переопределяем значение оптимального критерий f1
+    f1Optimal = int.MaxValue;
+    f1Current = int.MaxValue;
+
+    using (var file = new StreamWriter(fileName))
+    {
+
+        // Создаём экземпляр класса для работы с нижним уровнем
+        SimplePreMSchedule schedule = new SimplePreMSchedule(config, preMConfig);
+
+        // TODO: Костыль для фиксированных пакетов
+        {
+            GenerateFixedBatchesSolution();
+
+            // Если построение расписание выполнено удачно
+            if (schedule.Build(PrimeMatrixA))
+            {
+                // Получаем f1 критерий
+                f1Current = schedule.GetMakespan();
+                f1Optimal = f1Current;
+                isBestSolution = true;
+                compositionNumber++;
+            }
+            
+        }
+
+        // Переопределяем значение оптимального критерий f1
+        f1Optimal = int.MaxValue;
+        f1Current = int.MaxValue;
+
+        // Генерируем начальное решение
+        GenerateStartSolution();
+
+        // Вызываем расчёты
+        if (schedule.Build(PrimeMatrixA)) {
+
+            // Получаем f1
+            f1Current = schedule.GetMakespan();
+
+            // Если текущей критерий лучше оптимального
+            if (f1Current < f1Optimal)
+            {
+
+                // Копируем матрицу с лучшим решением
+                bestMatrixA = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
+
+                // Устанавливаем флаг лучшего решения
+                isBestSolution = true;
+
+                // Переопределяем критерий f1 лучшего решения
+                f1Optimal = f1Current;
+
+            }
+
+        }
+
+        // Инициализируем матрицу _a1
+        copyPrimeAtoA1();
+
+        // Если пакеты не фиксированные
+        if (!config.isFixedBatches)
+        {
+
+            // До тех пор, пока не расмотрели все типы выполняем обработку
+            while (CheckType())
+            {
+                // Буферезируем текущее решение для построение нового на его основе
+                _ai = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
+
+                // Если текущее решение лучше
+                if (isBestSolution)
+                {
+                    // Копируем текущее решение во временный массив _a1
+                    copyPrimeAtoA1();
+
+                    // Сбрасываем флаг лучшего решения
+                    isBestSolution = false;
+                }
+
+                // TODO: Ненужное присваивание
+                bestMatrixA = ListUtils.MatrixIntDeepCopy(_ai);
+                
+                // TODO: Спорный случай, всегда перезатираем лучшее решение из костыля
+                f1Optimal = f1Current;
+
+                // Для каждого типа и каждого решения в типе строим новое решение и проверяем его на критерий
+                // Строим A2 и параллельно проверяем критерий
+                _a2 = new List<List<List<int>>>(config.dataTypesCount);
+
+                // Выполяем инициализацию
+                _a2.AddRange(Enumerable.Repeat(new List<List<int>>(), config.dataTypesCount));
+
+                string s;
+                file.WriteLine("окрестность 1 вида");
+
+                // Для каждого типа данных в рассмотрении (_i[dataType] != 0) выполняем обработку
+                for (var dataType = 0; dataType < config.dataTypesCount; dataType++)
+                {
+
+                    // Если данный тип данных не находится в рассмотрении
+                    if (_i[dataType] <= 0)
+
+                        // Пропускаем итерацию
+                        continue;
+
+                    // Формируем новый состав партий для типа dataType
+                    _a2[dataType] = NewData(dataType);
+
+                    // Для каждого пакета в новом составе партий выполняем обработку
+                    for (var batchIndex = 0; batchIndex < _a2[dataType].Count; batchIndex++)
+                    {
+                        List<List<int>> tempA = SetTempAFromA2(dataType, batchIndex);
+
+                        // Если расписание построилось не успешно
+                        if (!schedule.Build(tempA))
+                        {                            
+                            // Пропускаем обработку
+                            continue;
+                        }
+
+                        // Получаем критерий f1
+                        var fBuf = schedule.GetMakespan();
+
+                        s = ListUtils.MatrixIntToString(tempA, ", ", "", ";");
+                        file.Write(s + " " + fBuf);
+
+                        // Если текущее решение лучше
+                        if (fBuf < f1Optimal)
+                        {
+                            // Копируем матрицу с лучшим решением
+                            bestMatrixA = ListUtils.MatrixIntDeepCopy(tempA);
+
+                            // Устанавливаем флаг лучшего решения
+                            isBestSolution = true;
+
+                            // Переопределяем критерий f1 лучшего решения
+                            f1Optimal = fBuf;
+
+                            // Логируем нахождение лучшего решения
+                            file.Write(" +");
+                        }
+
+                        // Логируем
+                        file.WriteLine();
+                    }
+                }
+                
+                // Если лучшее решения не было найдено
+                if (!isBestSolution)
+                {
+
+                    // Логируем вызов комбинаций типов
+                    file.WriteLine("комбинации типов");
+
+                    // Формируем следующий состав пакетов заданий
+                    CombinationTypeWithPremaintences(file, _a2, 0, null, ref isBestSolution, ref schedule, ref preMConfig, ref helpRowNumber);
+                }
+
+                // Если лучшее решения было найдено
+                if (isBestSolution)
+                {
+
+                    // Запоминаем лучшее решение
+                    PrimeMatrixA = ListUtils.MatrixIntDeepCopy(bestMatrixA);
+
+                    // TODO: Проверить излишнее переопределение f1Current в f1Optimal
+                    f1Current = f1Optimal;
+
+                    continue;
+                }
+
+                // Для каждого типа данных выполняем обработку
+                for (int dataType = 0; dataType < config.dataTypesCount; dataType++)
+                {
+                    _a1[dataType] = ListUtils.MatrixIntDeepCopy(_a2[dataType]);
+                    if (!_a1[dataType].Any() || !_a1[dataType][0].Any())
+                        _i[dataType] = 0;
+                }
+            }
+        }
+
+        // Проверяем успешность работы программы
+        if (f1Optimal == int.MaxValue)
+        {
+            MessageBox.Show("Решения не было найдено");
+            return;
+        }
+
+        // Логируем лучший критерий f1
+        file.WriteLine(f1Optimal);
+        file.Close();
+        MessageBox.Show("Решения найдены f1 = " + f1Optimal);
+
+    }
+}
+
+public void copyPrimeAtoA1()
+{
+    _a1 = new List<List<List<int>>>();
+
+    for (var dataType = 0; dataType < config.dataTypesCount; dataType++)
+    {
+        _a1.Add(new List<List<int>>());
+        _a1[dataType].Add(new List<int>());
+        _a1[dataType][0] = ListUtils.VectorIntDeepCopy(PrimeMatrixA[dataType]);
+    }
+}
