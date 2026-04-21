@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace magisterDiplom.Model.Configuration
+namespace magisterDiplom.Fabric
 {
-    internal class TypedPreMConfiguration : PreMConfiguration
+    internal class TypedPreMShedule
     {
-        
+
+
+
     }
 }

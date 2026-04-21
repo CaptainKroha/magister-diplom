@@ -89,6 +89,7 @@
     <Compile Include="Fabric\Builders\SimplePreMScheduleBuilder.cs" />
     <Compile Include="Fabric\PreMSchedule.cs" />
     <Compile Include="Fabric\SimplePreMSchedule.cs" />
+    <Compile Include="Fabric\TypedPreMShedule.cs" />
     <Compile Include="FirstLevel.cs" />
     <Compile Include="Model\Batch.cs" />
     <Compile Include="Model\Config.cs" />
