@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace newAlgorithm.Model
 {
@@ -11,20 +10,30 @@ namespace newAlgorithm.Model
     public class Matrix
     {
 
+        private readonly int[,] _data;
+
         /// <summary>
         /// Данная переменная определяет размер первого измерения. Количество строк
         /// </summary>
-        public int rowCount { get; private set; }
+        public int Rows { get;}
 
         /// <summary>
         /// Данная переменная определяет размер второго измерения. Количество столбцов
         /// </summary>
-        public int columnCount { get; private set; }
+        public int Columns { get; }
 
-        /// <summary>
-        /// Данная переменная определяет матрицу
-        /// </summary>
-        private List<List<int>> matrix = new List<List<int>>();
+        public Matrix(int rows, int columns)
+        {
+            if (rows <= 0) throw new ArgumentException("Rows must be positive", nameof(rows));
+            if (columns <= 0) throw new ArgumentException("Columns must be positive", nameof(columns));
+
+            Rows = rows;
+            Columns = columns;
+            
+            _data = new int[rows, columns];
+
+        }
+
 
         /// <summary>
         /// Данный конструктор выполняет создание матрицы по переданному двумерному списку
@@ -32,38 +41,31 @@ namespace newAlgorithm.Model
         /// <param name="matrix">Двумерный список</param>
         public Matrix(List<List<int>> matrix)
         {
-            this.matrix = matrix;
-            this.rowCount = Convert.ToInt32(matrix.Count);
-            this.columnCount = Convert.ToInt32(matrix[0].Count);
+            if (matrix == null) throw new ArgumentNullException(nameof(matrix));
+            if (matrix.Count == 0) throw new ArgumentException("Matrix cannot be empty", nameof(matrix));
+            if (matrix[0] == null) throw new ArgumentException("First row cannot be null", nameof(matrix));
 
-            // Выполняем проверку на одинакувую размерность элементов в двумерном списке
-            // int max = Convert.ToInt32(matrix[0].Count); 
-            // foreach (List<int> row in matrix)
-            //     if (max != row.Count)
-            //         throw new Exception();
-        }
+            Rows = matrix.Count;
+            Columns = matrix[0].Count;
 
-        /// <summary>
-        /// Данная функция выполняем размер вектора по индексу
-        /// </summary>
-        /// <param name="index">Индекс получения строки элементов</param>
-        /// <returns>Размер вектора по индексу</returns>
-        public int GetVectorSize(int index)
-        {
-            return matrix[index].Count;
-        }
-
-        public int GetItem(int i, int j)
-        {
-            try
+            // Проверка, что все строки одинаковой длины
+            for (int i = 1; i < Rows; i++)
             {
-                return matrix[i - 1][j - 1];
+                if (matrix[i] == null || matrix[i].Count != Columns)
+                    throw new ArgumentException($"Row {i} has invalid length");
             }
-            catch (System.Exception)
+
+            _data = new int[Rows, Columns];
+
+            for (int i = 0; i < Rows; i++)
             {
-                return 0;
+                for (int j = 0; j < Columns; j++)
+                {
+                    _data[i, j] = matrix[i][j];
+                }
             }
         }
+
         /// <summary>
         /// Данное переопределение оператора индексирования позволяет присвоить и получить элементы по индексу
         /// </summary>
@@ -72,59 +74,23 @@ namespace newAlgorithm.Model
         /// <returns>Целочисленное значение по индексам row и col</returns>
         public int this[int row, int col]
         {
-
-            // Определяем код для получения значения
-            get
-            {
-
-                // Обрабатываем случай выхода за границы матрицы
-                if (row >= this.rowCount || col >= this.columnCount)
-                    return 0;
-
-                // Возвращаем значение элемента в матрице по индексам row и col
-                return this.matrix[row][col];
-            }
-
-            // Определяем код для установки значения
-            set
-            {
-
-                // Обрабатываем случай выхода за границы матрицы
-                if (row >= this.rowCount || col >= this.columnCount)
-                    throw new IndexOutOfRangeException();
-
-                // Обабатываем случай, когда переданный тип не соответсвует int
-                if (value.GetType() != typeof(int))
-                    throw new InvalidCastException();
-
-                // Устанавливаем значение элемента в матрице по индексам row и col
-                this.matrix[row][col] = value;
-            }
+            get => _data[row, col];
+            set => _data[row, col] = value;
         }
 
-        #region Неиспользованные функции
-
-        /// <summary>
-        /// Данная статическая функция выполняет созданию матрицы из 0 [row, col]
-        /// </summary>
-        /// <param name="row">Количество строк</param>
-        /// <param name="col">Количество колонок</param>
-        /// <returns></returns>
-        public static Matrix zeros(int row, int col)
+        public static List<List<int>> ToListList(Matrix _matrix)
         {
-
-            // Инициализируем двумерный список из 0
-            List<List<int>> array = new List<List<int>>();
-            for (int i = 0; i < row; i++) {
-                array.Add(new List<int>());
-                for (int j = 0; j < col; j++)
-                    array[i].Add(0);
+            var result = new List<List<int>>(_matrix.Rows);
+            for (int i = 0; i < _matrix.Rows; ++i)
+            {
+                result.Add(new List<int>(_matrix.Columns));
+                for (int j = 0; j < _matrix.Columns; ++j)
+                {
+                    result[i].Add(_matrix[i, j]);
+                }
             }
-
-            // Возвращаем экземпляр класса Matrix состоящий из 0
-            return new Matrix(array);
+            return result;
         }
 
-        #endregion
     }
 }

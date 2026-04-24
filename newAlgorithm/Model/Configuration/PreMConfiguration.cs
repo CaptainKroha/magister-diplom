@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace magisterDiplom.Model.Configuration
 {
-    internal class PreMConfiguration : Configuration
+    public class PreMConfiguration : Configuration
     {
         /// <summary>
         /// Нижняя граница для значения интенсивностей
         /// </summary>
-        private const double lowerRate = 0.0;
+        public const double lowerRate = 0.0;
 
         /// <summary>
         /// Нижняя граница для значения интенсивностей
         /// </summary>
-        private const double upperRate = 1.0;
+        public const double upperRate = 1.0;
 
         /// <summary>
         /// Список из времён времени выполнения ПТО для соответствующих приборов: preMaintenanceTimes = [deviceCount]
@@ -42,6 +42,14 @@ namespace magisterDiplom.Model.Configuration
         /// Конструктор по умолчанию
         /// </summary>
         public PreMConfiguration() { }
+
+        public PreMConfiguration(PreMConfig config) : base(config.config)
+        {
+            beta = config.beta;
+            preMaintenanceTimes = config.preMaintenanceTimes;
+            failureRates = config.failureRates;
+            restoringDevice = config.restoringDevice;
+        }
 
         /// <summary>
         /// Конструктор

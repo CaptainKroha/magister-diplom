@@ -29,14 +29,14 @@ namespace GlobalTest
             );
 
             // Создаём объект класса расписания
-            SimplePreMSchedule schedule = new (config, preMConfig);
+            //SimplePreMSchedule schedule = new (config, preMConfig);
 
-            // Выполняем вызов функции Build
-            schedule.Build(new List<List<int>> {
-                new () { 4, 4, 2 },
-                new () { 4, 4, 2 },
-                new () { 4, 4, 2 },
-            });
+            //// Выполняем вызов функции Build
+            //schedule.Build(new List<List<int>> {
+            //    new () { 4, 4, 2 },
+            //    new () { 4, 4, 2 },
+            //    new () { 4, 4, 2 },
+            //});
         }
 
     }

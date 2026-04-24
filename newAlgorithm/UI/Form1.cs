@@ -10,6 +10,7 @@ using System.Text;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using magisterDiplom.Model.Configuration;
 
 namespace newAlgorithm
 {
@@ -1316,8 +1317,10 @@ namespace newAlgorithm
             // Формируем первый уровень
             var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
 
+            PreMConfiguration configuration = new PreMConfiguration(preMConfig);
+
             // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", preMConfig);
+            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", configuration);
         }
 
         /// <summary>
@@ -1983,7 +1986,7 @@ namespace newAlgorithm
             var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
 
             // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", preMConfig);
+            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
         }
     }
 }

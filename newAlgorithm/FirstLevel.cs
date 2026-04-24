@@ -13,6 +13,8 @@ using System.Diagnostics.Eventing.Reader;
 using newAlgorithm.Model;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using magisterDiplom;
+using magisterDiplom.HierarchicalGameModel;
+using magisterDiplom.Model.Configuration;
 
 namespace newAlgorithm
 {
@@ -127,7 +129,7 @@ namespace newAlgorithm
         /// Вектор _i инициализируется, как вектор из 1 длиной dataTypesCount.
         /// Матрица matrixA_Prime инициализируется, как матрица [dataTypesCount x 1] = [n x ].
         /// </summary>
-        public void GenerateFixedBatchesSolution()
+        public void GenerateFixedBatchesSolution() 
         {
             // Инициализируем строки матрицы A
             PrimeMatrixA = new List<List<int>>();
@@ -372,51 +374,59 @@ namespace newAlgorithm
         /// </summary>
         /// <param name="file"></param>
         /// <param name="type"></param>
-        public void CombinationTypeWithPremaintences(StreamWriter file, List<List<List<int>>> tempMatrix, int type, List<List<int>> tempM, ref bool solutionFlag, ref SimplePreMSchedule schedule, ref PreMConfig preMConfig, ref int helpRowNumber)
-        {
+        private void CombinationTypeWithPremaintences(
+            StreamWriter file,
+            List<List<List<int>>> tempMatrix,
+            int type,
+            List<List<int>> tempM,
+            ref bool solutionFlag,
+            ref SecondLevel secondLevel,
+            ref PreMConfiguration config,
+            ref int helpRowNumber
+        ) {
             if (type < config.dataTypesCount)
             {
                 for (var variantOfSplitIndex = 0; variantOfSplitIndex < _a2[type].Count; variantOfSplitIndex++)
                 {
                     List<List<int>> tempB = (tempM == null) ? new List<List<int>>() : ListUtils.MatrixIntDeepCopy(tempM);
                     tempB.Add(tempMatrix[type][variantOfSplitIndex]);
-                    CombinationTypeWithPremaintences(file, tempMatrix, type + 1, tempB, ref solutionFlag, ref schedule, ref preMConfig, ref helpRowNumber);
+                    CombinationTypeWithPremaintences(file, tempMatrix, type + 1, tempB, ref solutionFlag, ref secondLevel, ref config, ref helpRowNumber);
                 }
             }
             else
             {
                 // Если флаг логгирования установлен
-                if (Form1.loggingOn)
+                //if (Form1.loggingOn)
 
-                    // Задаём новое имя файла для записи
-                    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                 // Если построение расписание прошло успешно
-                if (schedule.Build(tempM))
+                if (secondLevel.Build(GetMForAMatrix(tempM), tempM))
                 {
 
                     // Если установлен флаг визуализации
-                    if (Form1.vizualizationOn)
-                    {
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{schedule.GetMakespan()}";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
+                    //if (Form1.vizualizationOn)
+                    //{
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{schedule.GetMakespan()}";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
 
-                        // Визуализируем промежуточные данные
-                        VisualizeData(tempM, schedule, preMConfig, ref helpRowNumber);
-                    }
-                    var fBuf = schedule.GetMakespan();
+                    //    // Визуализируем промежуточные данные
+                    //    VisualizeData(tempM, schedule, preMConfig, ref helpRowNumber);
+                    //}
+                    var fBuf = secondLevel.Makespan;
                     string s = ListUtils.MatrixIntToString(tempM, ", ", "", ";");
                     file.Write(s + " " + fBuf);
                     // MessageBox.Show(s + " Время обработки " + fBuf);
                     if (fBuf < f1Optimal)
                     {
-                        if (Form1.vizualizationOn)
-                        {
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                        }
+                        //if (Form1.vizualizationOn)
+                        //{
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //}
 
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(tempM);
                         solutionFlag = true;
@@ -431,18 +441,18 @@ namespace newAlgorithm
                     file.WriteLine();
 
                 }
-                else if (Form1.vizualizationOn && Form1.showND)
-                {
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
+                //else if (Form1.vizualizationOn && Form1.showND)
+                //{
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
                     
-                    // Визуализируем промежуточные данные
-                    VisualizeData(tempM, schedule, preMConfig, ref helpRowNumber, false);
+                //    // Визуализируем промежуточные данные
+                //    VisualizeData(tempM, schedule, preMConfig, ref helpRowNumber, false);
 
-                    // Увеличиваем счётчик составов пакетов заданий
-                    compositionNumber++;
-                }
+                //    // Увеличиваем счётчик составов пакетов заданий
+                //    compositionNumber++;
+                //}
                 
             }
         }
@@ -1319,67 +1329,67 @@ namespace newAlgorithm
         /// <summary>
         /// Алгоритм формирования решения по составам паритй всех типов данных
         /// </summary>
-        public void GenetateSolutionWithPremaintenance(string fileName, PreMConfig preMConfig)
+        public void GenetateSolutionWithPremaintenance(string fileName, PreMConfiguration config)
         {
 
             // Устанавливам номер строки
             int helpRowNumber = 1;
 
             // Формируем имя файла
-            logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}";
+            //logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}";
 
-            // Инициализируем значения
-            compositionNumber = 1;
-            displayRowNumber = 1;
-            displayColumnNumber = 1;
+            //// Инициализируем значения
+            //compositionNumber = 1;
+            //displayRowNumber = 1;
+            //displayColumnNumber = 1;
 
-            // Инициализируем объект для работы с Excel
-            excelApplication = null;
+            //// Инициализируем объект для работы с Excel
+            //excelApplication = null;
 
-            // Инициализируем владки для работы с Excel
-            excelSheet = null; metaDataSheet = null;
+            //// Инициализируем владки для работы с Excel
+            //excelSheet = null; metaDataSheet = null;
 
-            // Объявляем линейный график
-            ChartObjects linerChart = null;
+            //// Объявляем линейный график
+            //ChartObjects linerChart = null;
 
             // Если визуализация включена
-            if (Form1.vizualizationOn) {
+            //if (Form1.vizualizationOn) {
 
-                // Инициализируем объект для работы с Excel
-                excelApplication = new Excel.Application
-                {
-                    // Устанавливаем флаг отображение 
-                    Visible = true
-                };
+            //    // Инициализируем объект для работы с Excel
+            //    excelApplication = new Excel.Application
+            //    {
+            //        // Устанавливаем флаг отображение 
+            //        Visible = true
+            //    };
 
-                // Создаём вкладку
-                Workbook mainWorkbook = excelApplication.Workbooks.Add(Type.Missing);
-                mainWorkbook.Worksheets.Add();
-                mainWorkbook.Worksheets.Add();
+            //    // Создаём вкладку
+            //    Workbook mainWorkbook = excelApplication.Workbooks.Add(Type.Missing);
+            //    mainWorkbook.Worksheets.Add();
+            //    mainWorkbook.Worksheets.Add();
 
-                // Получаем вкладку с параметрами
-                VisualizeConfig((Excel.Worksheet)excelApplication.Worksheets.get_Item(1), preMConfig, 1, 1);
+            //    // Получаем вкладку с параметрами
+            //    VisualizeConfig((Excel.Worksheet)excelApplication.Worksheets.get_Item(1), preMConfig, 1, 1);
 
-                // Получаем вкладки и переключаемся на неё
-                excelSheet = (Excel.Worksheet)excelApplication.Worksheets.get_Item(2);
-                excelSheet.Activate();
+            //    // Получаем вкладки и переключаемся на неё
+            //    excelSheet = (Excel.Worksheet)excelApplication.Worksheets.get_Item(2);
+            //    excelSheet.Activate();
 
-                // Устанавливаем имя вкладки
-                excelSheet.Name = "Результаты";
+            //    // Устанавливаем имя вкладки
+            //    excelSheet.Name = "Результаты";
 
-                excelSheet.Cells[displayRowNumber, displayColumnNumber + 0] = "Номер состава";
-                excelSheet.Cells[displayRowNumber, displayColumnNumber + 1] = "Критерий f1";
-                excelSheet.Cells[displayRowNumber, displayColumnNumber + 2] = "Критерий f2";
+            //    excelSheet.Cells[displayRowNumber, displayColumnNumber + 0] = "Номер состава";
+            //    excelSheet.Cells[displayRowNumber, displayColumnNumber + 1] = "Критерий f1";
+            //    excelSheet.Cells[displayRowNumber, displayColumnNumber + 2] = "Критерий f2";
 
-                excelSheet.Rows.AutoFit();
-                excelSheet.Columns.AutoFit();
+            //    excelSheet.Rows.AutoFit();
+            //    excelSheet.Columns.AutoFit();
 
-                // Получаем вкладку с параметрами
-                metaDataSheet = (Excel.Worksheet)excelApplication.Worksheets.get_Item(3);
+            //    // Получаем вкладку с параметрами
+            //    metaDataSheet = (Excel.Worksheet)excelApplication.Worksheets.get_Item(3);
 
-                // Устанавливаем имя вкладки
-                metaDataSheet.Name = "Промежуточные данные";
-            }
+            //    // Устанавливаем имя вкладки
+            //    metaDataSheet.Name = "Промежуточные данные";
+            //}
 
             // Переопределяем значение оптимального критерий f1
             f1Optimal = int.MaxValue;
@@ -1389,58 +1399,59 @@ namespace newAlgorithm
             {
 
                 // Создаём экземпляр класса для работы с нижним уровнем
-                SimplePreMSchedule schedule = new SimplePreMSchedule(config, preMConfig);
+                //SimplePreMSchedule schedule = new SimplePreMSchedule(config, preMConfig);
+                SecondLevel secondLevel = SecondLevel.CreateForSimplePreMaintence(config);
 
                 // Если флаг логгирования установлен
-                if (Form1.loggingOn)
+                //if (Form1.loggingOn)
 
-                    // Задаём новое имя файла для записи
-                    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                 // TODO: Костыль для фиксированных пакетов
                 {
                     GenerateFixedBatchesSolution();
 
                     // Если флаг логгирования установлен
-                    if (Form1.loggingOn)
+                    //if (Form1.loggingOn)
 
-                        // Задаём новое имя файла для записи
-                        schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+                    //    // Задаём новое имя файла для записи
+                    //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                     // Если построение расписание выполнено удачно
-                    if (schedule.Build(PrimeMatrixA))
+                    if (secondLevel.Build(GetMForAMatrix(PrimeMatrixA), PrimeMatrixA))
                     {
 
                         // Если установлен флаг визуализации
-                        if (Form1.vizualizationOn)
-                        {
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{schedule.GetMakespan()}";
-                            excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
+                        //if (Form1.vizualizationOn)
+                        //{
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{schedule.GetMakespan()}";
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
 
-                            // Визуализируем промежуточные данные
-                            VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber);
-                        }
+                        //    // Визуализируем промежуточные данные
+                        //    VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber);
+                        //}
 
                         // Получаем f1 критерий
-                        f1Current = schedule.GetMakespan();
+                        f1Current = secondLevel.Makespan;
 
                         // MessageBox.Show(ListUtils.MatrixIntToString(PrimeMatrixA, ", ", "", ";") + "Время обработки " + f1Current);
                         f1Optimal = f1Current;
                         file.WriteLine(f1Optimal);
                         isBestSolution = true;
                         compositionNumber++;
-
-                    } else if (Form1.vizualizationOn && Form1.showND)
-                    {
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
-
-                        // Визуализируем промежуточные данные
-                        VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber, false);
-                        compositionNumber++;
                     }
+                    //} else if (Form1.vizualizationOn && Form1.showND)
+                    //{
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
+
+                    //    // Визуализируем промежуточные данные
+                    //    VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber, false);
+                    //    compositionNumber++;
+                    //}
                     
                 }
 
@@ -1452,28 +1463,28 @@ namespace newAlgorithm
                 GenerateStartSolution();
 
                 // Если флаг логгирования установлен
-                if (Form1.loggingOn)
+                //if (Form1.loggingOn)
 
-                    // Задаём новое имя файла для записи
-                    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                 // Вызываем расчёты
-                if (schedule.Build(PrimeMatrixA)) {
+                if (secondLevel.Build(GetMForAMatrix(PrimeMatrixA), PrimeMatrixA)) {
 
                     // Получаем f1
-                    f1Current = schedule.GetMakespan();
+                    f1Current = secondLevel.Makespan;
                     // MessageBox.Show(ListUtils.MatrixIntToString(PrimeMatrixA, ", ", "", ";") + " Время обработки " + f1Current);
 
                     // Если установлен флаг визуализации
-                    if (Form1.vizualizationOn)
-                    {
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{f1Current}";
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
+                    //if (Form1.vizualizationOn)
+                    //{
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{f1Current}";
+                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
 
-                        // Визуализируем промежуточные данные
-                        VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber);
-                    }
+                    //    // Визуализируем промежуточные данные
+                    //    VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber);
+                    //}
 
                     compositionNumber++;
 
@@ -1482,12 +1493,12 @@ namespace newAlgorithm
                     {
 
                         // Если установлен флаг визуализации
-                        if (Form1.vizualizationOn)
-                        {
-                            excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                            excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                            excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                        }
+                        //if (Form1.vizualizationOn)
+                        //{
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                        //}
                         // Копируем матрицу с лучшим решением
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
 
@@ -1501,16 +1512,16 @@ namespace newAlgorithm
                         file.Write(" +");
                     }
 
-                } else if (Form1.vizualizationOn && Form1.showND)
-                {
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
-                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
+                //} else if (Form1.vizualizationOn && Form1.showND)
+                //{
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
+                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
 
-                    // Визуализируем промежуточные данные
-                    VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber, false);
+                //    // Визуализируем промежуточные данные
+                //    VisualizeData(PrimeMatrixA, schedule, preMConfig, ref helpRowNumber, false);
 
-                    compositionNumber++;
+                //    compositionNumber++;
                 }
 
                 // Инициализируем матрицу _a1
@@ -1591,41 +1602,41 @@ namespace newAlgorithm
                                 tempA = SetTempAFromA2(dataType, batchIndex);
 
                                 // Если флаг логгирования установлен
-                                if (Form1.loggingOn)
+                                //if (Form1.loggingOn)
 
-                                    // Задаём новое имя файла для записи
-                                    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+                                //    // Задаём новое имя файла для записи
+                                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                                 // Если расписание построилось не успешно
-                                if (!schedule.Build(tempA))
+                                if (!secondLevel.Build(GetMForAMatrix(tempA), tempA))
                                 {
-                                    if (Form1.vizualizationOn && Form1.showND)
-                                    {
-                                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
-                                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
+                                    //if (Form1.vizualizationOn && Form1.showND)
+                                    //{
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = "#N/A";
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
 
-                                        // Визуализируем промежуточные данные
-                                        VisualizeData(tempA, schedule, preMConfig, ref helpRowNumber, false);
-                                        compositionNumber++;
-                                    }
+                                    //    // Визуализируем промежуточные данные
+                                    //    VisualizeData(tempA, schedule, preMConfig, ref helpRowNumber, false);
+                                    //    compositionNumber++;
+                                    //}
                                     
                                     // Пропускаем обработку
                                     continue;
                                 }
 
                                 // Получаем критерий f1
-                                var fBuf = schedule.GetMakespan();
+                                var fBuf = secondLevel.Makespan;
 
-                                if (Form1.vizualizationOn)
-                                {
-                                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{fBuf}";
-                                    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
+                                //if (Form1.vizualizationOn)
+                                //{
+                                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
+                                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{fBuf}";
+                                //    excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
 
-                                    // Визуализируем промежуточные данные
-                                    VisualizeData(tempA, schedule, preMConfig, ref helpRowNumber);
-                                }
+                                //    // Визуализируем промежуточные данные
+                                //    VisualizeData(tempA, schedule, preMConfig, ref helpRowNumber);
+                                //}
 
                                 compositionNumber++;
 
@@ -1636,12 +1647,12 @@ namespace newAlgorithm
                                 // Если текущее решение лучше
                                 if (fBuf < f1Optimal)
                                 {
-                                    if (Form1.vizualizationOn)
-                                    {
-                                        excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                                        excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                                        excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
-                                    }
+                                    //if (Form1.vizualizationOn)
+                                    //{
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 0].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 1].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                                    //    excelSheet.Cells[displayRowNumber + compositionNumber - 1, displayColumnNumber + 2].Interior.Color = System.Drawing.ColorTranslator.ToOle(System.Drawing.Color.Lime);
+                                    //}
 
                                     // Копируем матрицу с лучшим решением
                                     bestMatrixA = ListUtils.MatrixIntDeepCopy(tempA);
@@ -1669,7 +1680,7 @@ namespace newAlgorithm
                             file.WriteLine("комбинации типов");
 
                             // Формируем следующий состав пакетов заданий
-                            CombinationTypeWithPremaintences(file, _a2, 0, null, ref isBestSolution, ref schedule, ref preMConfig, ref helpRowNumber);
+                            CombinationTypeWithPremaintences(file, _a2, 0, null, ref isBestSolution, ref secondLevel, ref config, ref helpRowNumber);
                         }
 
                         // Если лучшее решения было найдено
@@ -1704,19 +1715,19 @@ namespace newAlgorithm
                 }
 
                 // Если флаг визуализации установлен
-                if (Form1.vizualizationOn)
-                {
-                    // Инициализируем линейный график
-                    Excel.Range r = excelSheet.Range[
-                        excelSheet.Cells[displayRowNumber, displayColumnNumber + 1],
-                        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1]
-                    ];
-                    linerChart = (ChartObjects)excelSheet.ChartObjects(Type.Missing);
-                    ChartObject charts = linerChart.Add(400, 0, 600, 300);
-                    Chart chart = (Chart)charts.Chart;
-                    chart.SetSourceData(r);
-                    chart.ChartType = XlChartType.xlLine;
-                }
+                //if (Form1.vizualizationOn)
+                //{
+                //    // Инициализируем линейный график
+                //    Excel.Range r = excelSheet.Range[
+                //        excelSheet.Cells[displayRowNumber, displayColumnNumber + 1],
+                //        excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1]
+                //    ];
+                //    linerChart = (ChartObjects)excelSheet.ChartObjects(Type.Missing);
+                //    ChartObject charts = linerChart.Add(400, 0, 600, 300);
+                //    Chart chart = (Chart)charts.Chart;
+                //    chart.SetSourceData(r);
+                //    chart.ChartType = XlChartType.xlLine;
+                //}
 
                 // Логируем лучший критерий f1
                 file.WriteLine(f1Optimal);
@@ -1909,6 +1920,17 @@ namespace newAlgorithm
                 result[1] = _f1;
                 //f.Close();
             }
+            return result;
+        }
+
+        protected List<int> GetMForAMatrix(List<List<int>> A_matrix)
+        {
+            var result = new List<int>();
+            foreach(var row in A_matrix)
+            {
+                result.Add(row.Count);
+            }
+
             return result;
         }
 
