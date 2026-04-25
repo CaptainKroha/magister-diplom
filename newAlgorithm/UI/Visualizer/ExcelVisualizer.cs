@@ -7,6 +7,8 @@ using magisterDiplom.Model;
 using newAlgorithm.Model;
 using System.Drawing;
 using magisterDiplom.Fabric;
+using magisterDiplom.HierarchicalGameModel;
+using magisterDiplom.Model.Configuration;
 using newAlgorithm;
 
 namespace magisterDiplom.UI.Visualizer
@@ -14,7 +16,7 @@ namespace magisterDiplom.UI.Visualizer
     /// <summary>
     /// Класс для визуализации результатов расчетов в формате Excel
     /// </summary>
-    public class ExcelVisualizer
+    internal class ExcelVisualizer
     {
         /// <summary>
         /// Данная структура данных содержит информацию о конфигурации конвейерной системы
@@ -55,7 +57,7 @@ namespace magisterDiplom.UI.Visualizer
         /// Инициализация Excel приложения и создание вкладок для вывода данных
         /// </summary>
         /// <param name="preMConfig">Параметры характеризующие ПТО</param>
-        public void Initialize(PreMConfig preMConfig)
+        public void Initialize(PreMConfiguration preMConfig)
         {
             // Инициализируем объект для работы с Excel
             excelApplication = new Excel.Application
@@ -96,16 +98,16 @@ namespace magisterDiplom.UI.Visualizer
         /// <summary>
         /// Визуализация результатов текущей итерации
         /// </summary>
-        public void VisualizeResult(int compositionNumber, SimplePreMSchedule schedule, List<List<int>> matrixA, PreMConfig preMConfig, ref int helpRowNumber, bool isSuccessfully = true)
+        public void VisualizeResult(int compositionNumber, SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput, SecondLevel secondLevel , List<List<int>> matrixA, PreMConfiguration preMConfig, ref int helpRowNumber, bool isSuccessfully = true)
         {
             if (isSuccessfully)
             {
                 excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 0] = $"{compositionNumber}";
-                excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{schedule.GetMakespan()}";
-                excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{schedule.CalculateCriteria_f2()}";
+                excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 1] = $"{secondLevel.Makespan}";
+                excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{secondLevelOutput.F2_Criteria}";
 
                 // Визуализируем промежуточные данные
-                VisualizeData(compositionNumber, matrixA, schedule, preMConfig, ref helpRowNumber);
+                VisualizeData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber);
             }
             else if (Form1.showND)
             {
@@ -114,7 +116,7 @@ namespace magisterDiplom.UI.Visualizer
                 excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
 
                 // Визуализируем промежуточные данные
-                VisualizeData(compositionNumber, matrixA, schedule, preMConfig, ref helpRowNumber, false);
+                VisualizeData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber, false);
             }
         }
 
@@ -152,7 +154,7 @@ namespace magisterDiplom.UI.Visualizer
         /// <param name="preMConfig">Параметры характеризующие ПТО</param>
         /// <param name="row">Номер строки начала отрисовки</param>
         /// <param name="col">Номер столбца начала отрисовки</param>
-        private void VisualizeConfig(Worksheet worksheet, PreMConfig preMConfig, int row = 0, int col = 0)
+        private void VisualizeConfig(Worksheet worksheet, PreMConfiguration preMConfig, int row = 0, int col = 0)
         {
             // Изменяем название закладки
             worksheet.Name = "Начальные параметры";
@@ -421,15 +423,16 @@ namespace magisterDiplom.UI.Visualizer
         /// </summary>
         /// <param name="compositionNumber">Номер состава пакетов</param>
         /// <param name="matrixA">Матрица составов пакетов заданий</param>
-        /// <param name="preMSchedule">Класс для получения данных из нижнего уровня</param>
+        /// <param name="secondLevel">Класс для получения данных из нижнего уровня</param>
         /// <param name="preMConfig">Конфигурационная структура для отображения общих данных</param>
         /// <param name="row">Номер строки начала отрисовки</param>
         /// <param name="isSuccessfully">Флаг построения расписания</param>
         private void VisualizeData(
             int compositionNumber,
             List<List<int>> matrixA,
-            SimplePreMSchedule preMSchedule,
-            PreMConfig preMConfig,
+            SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput,
+            SecondLevel secondLevel,
+            PreMConfiguration preMConfig,
             ref int row,
             bool isSuccessfully = true
         ) {
@@ -455,7 +458,7 @@ namespace magisterDiplom.UI.Visualizer
             Excel.Range r;
 
             // Получаем матрицу Y
-            List<List<int>> matrixY = preMSchedule.GetMatrixY();
+            List<List<int>> matrixY = secondLevelOutput.Y_Matrix;
 
             // Функция подсчёта максимального количества заданий
             void calcMaxJobCount() {
@@ -505,7 +508,7 @@ namespace magisterDiplom.UI.Visualizer
                 // Отображаем матрицу P
                 {
                     // Получаем матрицу P
-                    List<List<int>> matrixP = preMSchedule.GetMatrixP();
+                    List<List<int>> matrixP = secondLevelOutput.P_Matrix;
 
                     // Объединяем несколько ячеек для заголовка
                     r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row, col + batchSize]];
@@ -541,7 +544,7 @@ namespace magisterDiplom.UI.Visualizer
                 // Отображаем матрицу R
                 {
                     // Получаем матрицу R
-                    List<List<int>> matrixR = preMSchedule.GetMatrixR();
+                    List<List<int>> matrixR = secondLevelOutput.R_Matrix;
 
                     // Объединяем несколько ячеек для заголовка
                     r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row, col + batchSize]];
@@ -550,7 +553,7 @@ namespace magisterDiplom.UI.Visualizer
                     // Выводим заголовок таблицы
                     metaDataSheet.Cells[row, col] = "Матрица R";
                     metaDataSheet.Cells[row, col].Font.Bold = true;
-                    metaDataSheet.Cells[row, col].HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
+                    metaDataSheet.Cells[row, col].HorizontalAlignment = XlHAlign.xlHAlignCenter;
 
                     // Устанавливаем автовыравнивание
                     r.Columns.AutoFit();
@@ -612,7 +615,7 @@ namespace magisterDiplom.UI.Visualizer
                 {
 
                     // Получаем матрицу TPM
-                    List<List<int>> matrixTPM = preMSchedule.GetMatrixTPM();
+                    List<List<int>> matrixTPM = secondLevelOutput.Tpm_Matrix;
 
                     // Объединяем несколько ячеек для заголовка
                     r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row, col + batchSize]];
@@ -650,7 +653,7 @@ namespace magisterDiplom.UI.Visualizer
                 {
 
                     // Получаем матрицу T^0l
-                    Dictionary<int, List<List<int>>> startProcessing = preMSchedule.GetStartProcessing();
+                    Dictionary<int, List<List<int>>> startProcessing = secondLevelOutput.StartProcessing;
 
                     // Отображаем таблицу
                     for (int device = 0; device < config.deviceCount; device++)
@@ -699,7 +702,7 @@ namespace magisterDiplom.UI.Visualizer
                             metaDataSheet.Cells[row + device + 1, col] = $"Прибор {device + 1}";
 
                         // Для каждого момента времени
-                        for (int time = 0; time <= preMSchedule.GetMakespan() + preMConfig.preMaintenanceTimes.Max(); time++) {
+                        for (int time = 0; time <= secondLevel.Makespan + preMConfig.preMaintenanceTimes.Max(); time++) {
 
                             // Отображаем время
                             metaDataSheet.Cells[row, col + time + 1] = time;
@@ -719,10 +722,10 @@ namespace magisterDiplom.UI.Visualizer
                                 {
 
                                     // Выводим информацию
-                                    metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + 1] = $"Тип {preMSchedule.GetDataTypeByBatchIndex(batchIndex) + 1}";
+                                    metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + 1] = $"Тип {secondLevelOutput.BatchType(batchIndex) + 1}";
 
                                     // Получаем диапазон задания
-                                    r = metaDataSheet.Range[metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + 1], metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + config.proccessingTime[device][preMSchedule.GetDataTypeByBatchIndex(batchIndex)]]];
+                                    r = metaDataSheet.Range[metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + 1], metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex][job] + config.proccessingTime[device][secondLevelOutput.BatchType(batchIndex)]]];
                                     r.Merge(true);
                                     r.Borders.LineStyle = XlLineStyle.xlContinuous;
                                     r.Borders.Weight = XlBorderWeight.xlThin;
@@ -732,10 +735,10 @@ namespace magisterDiplom.UI.Visualizer
                                 // Если в текущей позиции есть ПТО
                                 if (matrixY[device][batchIndex] != 0)
                                 {
-                                    metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][preMSchedule.GetDataTypeByBatchIndex(batchIndex)] + 1] = $"ПТО";
+                                    metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][secondLevelOutput.BatchType(batchIndex)] + 1] = $"ПТО";
                                     r = metaDataSheet.Range[
-                                        metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][preMSchedule.GetDataTypeByBatchIndex(batchIndex)] + 1],
-                                        metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][preMSchedule.GetDataTypeByBatchIndex(batchIndex)] + preMConfig.preMaintenanceTimes[device]]
+                                        metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][secondLevelOutput.BatchType(batchIndex)] + 1],
+                                        metaDataSheet.Cells[row + device + 1, col + startProcessing[device][batchIndex].Last() + config.proccessingTime[device][secondLevelOutput.BatchType(batchIndex)] + preMConfig.preMaintenanceTimes[device]]
                                     ];
                                     r.Merge(true);
                                     r.Borders.LineStyle = XlLineStyle.xlContinuous;
@@ -746,7 +749,7 @@ namespace magisterDiplom.UI.Visualizer
                         }
 
                         // Устанавливаем границы
-                        r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row + config.deviceCount, col + preMSchedule.GetMakespan() + preMConfig.preMaintenanceTimes.Max() + 1]];
+                        r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row + config.deviceCount, col + secondLevel.Makespan + preMConfig.preMaintenanceTimes.Max() + 1]];
                         r.Borders.LineStyle = XlLineStyle.xlContinuous;
                         r.Borders.Weight = XlBorderWeight.xlThin;
                     }

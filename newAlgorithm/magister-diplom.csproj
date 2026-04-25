@@ -84,6 +84,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AllSolutionsFirstLevel.cs" />
     <Compile Include="BatchTypeClaims.cs" />
     <Compile Include="CalculationService.cs" />
     <Compile Include="Fabric\Builders\SimplePreMScheduleBuilder.cs" />
@@ -92,6 +93,7 @@
     <Compile Include="Fabric\TypedPreMShedule.cs" />
     <Compile Include="FirstLevel.cs" />
     <Compile Include="HierarchicalGameModel\SecondLevel.cs" />
+    <Compile Include="IFirstLevel.cs" />
     <Compile Include="Model\Batch.cs" />
     <Compile Include="Model\Config.cs" />
     <Compile Include="Model\Configuration\Configuration.cs" />
@@ -103,6 +105,8 @@
     <Compile Include="Model\Vector.cs" />
     <Compile Include="Fabric\Schedule.cs" />
     <Compile Include="Fabric\Builders\ScheduleBuilder.cs" />
+<!--    <Compile Include="PreMFirstLevel.cs" />-->
+    <Compile Include="SecondAlgorithmFirstLevel.cs" />
     <Compile Include="UI\Form1.cs">
       <SubType>Form</SubType>
     </Compile>

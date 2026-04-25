@@ -23,7 +23,7 @@ namespace magisterDiplom
 
             public List<List<int>> P_Matrix { get; private set; } = null;
 
-            protected Dictionary<int, List<List<int>>> StartProcessing { get; private set; } = null;
+            public Dictionary<int, List<List<int>>> StartProcessing { get; private set; } = null;
 
             public SecondLevelOutput(Schedule schedule)
             {
