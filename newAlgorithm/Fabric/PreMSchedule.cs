@@ -14,6 +14,32 @@ namespace magisterDiplom.Fabric
     public abstract class PreMSchedule : Schedule
     {
 
+        public class PreMaintenceSecondLevelOutput : SecondLevelOutput
+        {
+            public List<List<int>> Tpm_Matrix { get; private set; } = null;
+
+            public PreMaintenceSecondLevelOutput(PreMSchedule schedule) : base(schedule)
+            {
+                if (!Success)
+                {
+                    return;
+                }
+
+                Tpm_Matrix = new List<List<int>>(schedule.config.deviceCount);
+
+                for (int device = 0; device < schedule.config.deviceCount; device++)
+                {
+                    Tpm_Matrix.Add(new List<int>(schedule.ScheduleSize()));
+                    for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
+                        Tpm_Matrix[device].Add(0);
+
+                    for (int batch = 0; batch < schedule.matrixTPM[device].Count; batch++)
+                        Tpm_Matrix[device][schedule.matrixTPM[device][batch].BatchIndex] = schedule.matrixTPM[device][batch].TimePreM;
+                }
+            }
+
+        }
+
         /// <summary>
         /// Конфигурационная структура содержащая информацию о ПТО
         /// </summary>
@@ -61,41 +87,6 @@ namespace magisterDiplom.Fabric
                             )
                         );
             }
-        }
-
-        /// <summary>
-        /// Возвращает матрицу моментов времени окончания ПТО приборов
-        /// </summary>
-        /// <returns>Матрица моментов времени окончания ПТО приборов</returns>
-        public List<List<int>> GetMatrixTPM()
-        {
-            CalcMatrixTPM();
-
-            // Объявляем матрицу
-            List<List<int>> res = new List<List<int>>(matrixTPM.Count);
-
-            // Инициализируем матрицу
-            for (int device = 0; device < config.deviceCount; device++)
-            {
-
-                // Инициализируем строки матрицы
-                res.Add(new List<int>(matrixTPM[device].Count));
-
-                // Для каждого элемента матрицы matrixTPM
-                for (int batch = 0; batch < ScheduleSize(); batch++)
-
-                    // Устанавливаем в 0
-                    res[device].Add(0);
-
-                // Для каждого элемента матрицы matrixTPM
-                for (int batchIndex = 0; batchIndex < matrixTPM[device].Count; batchIndex++)
-
-                    // Инициализируем столбцы матрицы
-                    res[device][matrixTPM[device][batchIndex].BatchIndex] = matrixTPM[device][batchIndex].TimePreM;
-            }
-
-            // Возвращаем результат
-            return res;
         }
 
         protected override void Calculate()
@@ -146,6 +137,11 @@ namespace magisterDiplom.Fabric
             schedule = new List<Batch>(batchesCount);
         }
 
+        public override SecondLevelOutput Result()
+        {
+            return new PreMaintenceSecondLevelOutput(this);
+        }
+
         protected override void CalcStartProcessing()
         {
 
@@ -167,7 +163,7 @@ namespace magisterDiplom.Fabric
             }
         }
 
-        public override int F2_criteria()
+        protected override int F2_criteria()
         {
             return PreMaintenceDuration() + TotalInactionDuration();
         }

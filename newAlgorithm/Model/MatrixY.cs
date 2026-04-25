@@ -60,9 +60,9 @@ namespace magisterDiplom.Model
 
         }
 
-        public static List<List<int>> ToListList(MatrixY matrix)
+        public List<List<int>> ToListList()
         {
-            return matrix._data;
+            return _data;
         }
 
     }

@@ -1,21 +1,11 @@
 ﻿using ConsoleTables;
 using magisterDiplom.Model;
 using magisterDiplom.Model.Configuration;
-using magisterDiplom.Utils;
-using newAlgorithm;
-using newAlgorithm.Model;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Windows.Forms;
-using System.Xml.XPath;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using Batch = magisterDiplom.Model.Batch;
 
 namespace magisterDiplom.Fabric
@@ -288,7 +278,24 @@ namespace magisterDiplom.Fabric
     /// </summary>
     public class SimplePreMSchedule : PreMSchedule
     {
-        //const bool IsDebug_ShiftMatrixY = true;
+
+        public class SimplePreMaintenceSecondLevelOutput : PreMaintenceSecondLevelOutput
+        {
+
+            public List<List<int>> Y_Matrix { get; private set; } = null;
+            
+            public SimplePreMaintenceSecondLevelOutput(SimplePreMSchedule schedule) : base(schedule)
+            {
+                if (!Success)
+                {
+                    return;
+                }
+
+                Y_Matrix = schedule._matrixY.ToListList();
+            }
+
+
+        }
 
         /// <summary>
         /// Матрица порядка ПТО приборов
@@ -343,13 +350,14 @@ namespace magisterDiplom.Fabric
 
         }
 
-        public override bool Optimize()
+        public override void Optimize()
         {
 
             Calculate();
             if (SolutionUnacceptable())
             {
-                return false;
+                success = false;
+                return;
             }
 
             for (int batch = 0; batch < ScheduleSize() - 1; batch++)
@@ -365,26 +373,12 @@ namespace magisterDiplom.Fabric
                 }
             }
 
-            return true;
-        }       
-        
-        /// <summary>
-        /// Вернёт тип данных по переданному индексу ПЗ
-        /// </summary>
-        /// <param name="batchIndex">Индекс ПЗ</param>
-        /// <returns>Тип данных</returns>
-        public int GetDataTypeByBatchIndex(int batchIndex)
-        {
-            return schedule[batchIndex].Type;
+            success = true;
         }
 
-        /// <summary>
-        /// Возвращает матрицу ПТО приборов
-        /// </summary>
-        /// <returns>Матрица ПТО приборов</returns>
-        public List<List<int>> GetMatrixY()
+        public override SecondLevelOutput Result()
         {
-            return MatrixY.ToListList(_matrixY);
+            return new SimplePreMaintenceSecondLevelOutput(this);
         }
 
         protected override void AddColumnY()
@@ -406,352 +400,6 @@ namespace magisterDiplom.Fabric
         {
             return _matrixY.PreMaintenceStatusAfter(device, packet);
         }
-
-        //public override bool Build(List<List<int>> _matrixA)
-        //{
-        //    return true;
-
-        // return BuildWithoutLogging(_matrixA);
-
-        // Если установлено логирование
-        //if (Form1.loggingOn)
-
-        //    // Записываем данные в файл
-        //    fstream.Write("Начинаем выполнять операции на нижнем уровне;");
-
-        //List<List<int>> matrixA = ListUtils.MatrixIntDeepCopy(_matrixA);
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-        //{
-
-        //    // Cоздаём экземпляр класса для работы со строками
-        //    StringBuilder str = new StringBuilder(200);
-
-        //    // Объявляем временную строку
-        //    str.AppendLine($"Матрица A:");
-
-        //    // Для каждого типа данных
-        //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-        //    {
-
-        //        // Добавляем новые данные в строку
-        //        str.Append($"\tТип {_dataType + 1}: ");
-
-        //        // Для каждого пакета в векторе типа _dataType матрицы A
-        //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
-
-        //            // Добавляем в строку данные
-        //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
-
-        //        // Добавляем перевод строки
-        //        str.Append(Environment.NewLine);
-        //    }
-
-        //    // Записываем заголовок
-        //    fstream.Write(str.ToString());
-        //}
-
-        //int dataType, maxBatchCount = 0, batch = 0, batchCount = 0;
-
-        //// Вычисляем максимальное количество пакетов среди всех типов данных
-        //calcMaxBatchCount();
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-
-        //    // Записываем данные в файл
-        //    fstream.Write("maxBatchCount", maxBatchCount);
-
-        //// Вернёт максимальное количество пакетов среди всех типов данных
-        //void calcMaxBatchCount()
-        //{
-        //    // Выполняем обработку по типам
-        //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-
-        //        // Выполняем поиск максимального количество пакетов
-        //        maxBatchCount = Math.Max(maxBatchCount, matrixA[dataType].Count);
-        //}
-
-        //Dictionary<int, double> m = new Dictionary<int, double>(capacity: this.config.dataTypesCount);
-        //List<int> dataTypes = new List<int>(capacity: this.config.dataTypesCount);
-        //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-        //{
-        //    double sum = 0;
-        //    for (int device = 1; device < this.config.deviceCount; device++)
-        //        sum +=
-        //            (double)this.config.proccessingTime[device][dataType] /
-        //            (double)this.config.proccessingTime[device - 1][dataType];
-        //    m.Add(dataType, sum);
-        //}
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-
-        //    // Записываем данные в файл
-        //    fstream.Write($"Типы данных:");
-
-        //while (m.Any())
-        //{
-        //    int myDataType = m.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
-        //    dataTypes.Add(myDataType);
-        //    // Если установлено логирование
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write($"{myDataType}: {m[myDataType]}");
-        //    m.Remove(myDataType);
-        //}
-
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-        //{
-
-        //    // Выводим информацию
-        //    fstream.Write("dataTypes:");
-
-        //    // Для каждого типа
-        //    for (int _dataType = 0; _dataType < this.config.dataTypesCount; _dataType++)
-
-        //        // Выводим информацию
-        //        fstream.Write($"{_dataType}: {dataTypes[_dataType]}");
-        //}
-
-        //// Сортируем матрицу A
-        //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-        //    matrixA[dataType].Sort();
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-        //{
-
-        //    // Cоздаём экземпляр класса для работы со строками
-        //    StringBuilder str = new StringBuilder(200);
-
-        //    // Объявляем временную строку
-        //    str.AppendLine($"Матрица A:");
-
-        //    // Для каждого типа данных
-        //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-        //    {
-
-        //        // Добавляем новые данные в строку
-        //        str.Append($"\tТип {_dataType + 1}: ");
-
-        //        // Для каждого пакета в векторе типа _dataType матрицы A
-        //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
-
-        //            // Добавляем в строку данные
-        //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
-
-        //        // Добавляем перевод строки
-        //        str.Append(Environment.NewLine);
-        //    }
-
-        //    // Записываем заголовок
-        //    fstream.Write(str.ToString());
-        //}
-
-        //batch = dataType = 0;
-
-        //// Объявляем количество пакетов заданий
-
-
-        //// Для каждого типа данных
-        //for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-
-        //    // Увеличиваем общее количество пакетов заданий
-        //    batchCount += matrixA[_dataType].Count();
-
-        //// П.2 Добавляем 
-        //this.schedule = new List<Batch>(batchCount) { new Batch(
-        //    dataTypes[dataType],
-        //    matrixA[dataTypes[dataType]][batch]
-        //)};
-        //dataType++;
-
-        //// Если логирование установлено
-        //if (Form1.loggingOn) {
-        //    CalcStartProcessing();
-        //    fstream.WriteScheduleAsTable(schedule);
-        //}
-        //// П.3 Инициализируем матрицу Y
-        //this.matrixY = new List<List<int>>(capacity: this.config.deviceCount);
-        //for (int device = 0; device < this.config.deviceCount; device++)
-        //{
-        //    this.matrixY.Add(new List<int>());
-        //    this.matrixY[device].Add(1);
-        //}
-        //// Если логирование установлено
-        //if (Form1.loggingOn)
-        //{
-        //    fstream.WriteMatrixYAsTable(matrixY);
-        //}
-
-        //// Для каждого типа данных выполняем обрабоку
-        //for (; dataType < this.config.dataTypesCount; dataType++)
-        //{
-
-        //    // Добавляем ПЗ в расписание 
-        //    this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
-        //    for (int device = 0; device < this.config.deviceCount; device++)
-        //        this.matrixY[device].Add(0);
-        //    CalcStartProcessing();
-
-        //    // Если логирование установлено
-        //    if (Form1.loggingOn)
-        //    {
-        //        fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-        //    }
-
-        //    // Если не было найдено расписания удовлетворяющему условию надёжности
-        //    if (!this.SearchByPosition(5)) {
-
-        //        // Закрываем файл
-        //        UnsetLogFile();
-
-        //        // Возвращаем флаг неудачи
-        //        return false;
-        //    }
-
-        //    // Выполняем оптимизацию для позиций ПТО приборов
-        //    // this.ShiftMatrixY();
-
-        //    // Проверяем условие надёжности
-        //    // if (!this.IsSolutionAcceptable()) {
-
-        //        // Закрываем файл
-        //        // UnsetLogFile();
-
-        //        // Возвращаем флаг неудачи
-        //        // return false;
-        //    // }
-        //}
-
-        //// Увеличиваем индекс вставляемого пакета задания
-        //batch++;
-
-        //// Выполняем обработку
-        //while (batch < maxBatchCount)
-        //{
-
-        //    // Выполняем обработку для каждого типа данных
-        //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-        //    {
-
-        //        // Если индекс пакета превышает максимальный размер пакетов для типа данных dataType
-        //        if (batch >= matrixA[dataTypes[dataType]].Count)
-
-        //            // Продолжаем обработку для следующего типа данных
-        //            continue;
-
-        //        // Добавляем ПЗ в расписание 
-        //        this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
-        //        for (int device = 0; device < this.config.deviceCount; device++)
-        //            this.matrixY[device].Add(0);
-
-        //        // Если не было найдено расписания удовлетворяющему условию надёжности
-        //        if (!this.SearchByPosition(5)) {
-
-        //            // Закрываем файл
-        //            UnsetLogFile();
-
-        //            // Возвращаем флаг неудачи
-        //            return false;
-        //        }
-
-        //        // Выполняем оптимизацию для позиций ПТО приборов (ШАГ 15)
-        //        // this.ShiftMatrixY();
-
-        //        // Проверяем условие надёжности
-        //        // if (!this.IsSolutionAcceptable()) {
-
-        //            // Закрываем файл
-        //            // UnsetLogFile();
-
-        //            // Возвращаем флаг неудачи
-        //            // return false;
-        //        // }
-        //    }
-
-        //    // Увеличиваем индекс пакета
-        //    batch++;
-        //}
-
-
-        //// Формируем матрицу со всеми единицами в ПТО
-        //// = new List<List<int>>(capacity: config.deviceCount);
-
-        //for (int device = 0; device < matrixY.Count(); device++)
-        //    for (int batchIndex = 0; batchIndex < matrixY[device].Count(); batchIndex++)
-        //        matrixY[device][batchIndex] = 1;
-
-        //// Возвращяем флаг удачного построения расписания
-        //bool b = Optimize();
-
-        //// Если установлено логирование
-        //if (Form1.loggingOn)
-        //{
-
-        //    // Записываем данные в файл
-        //    fstream.Write("Начинаем выполнять операции на нижнем уровне");
-        //}
-
-        //return b;
-        //}
-
-        //private bool BuildWithoutLogging(List<List<int>> _matrixA)
-        //{
-
-        //    List<List<int>> matrixA = ListUtils.MatrixIntDeepCopy(_matrixA);
-
-        //    for (int dataType = 0; dataType < config.dataTypesCount; dataType++)
-        //        matrixA[dataType].Sort();
-
-        //    int batchCount = 0;
-
-        //    for (int dataType = 0; dataType < matrixA.Count(); dataType++)
-        //        batchCount += matrixA[dataType].Count();
-
-        //    schedule = new List<Batch>(batchCount);
-
-        //    matrixY = new List<List<int>>(capacity: config.deviceCount);
-        //    for (int device = 0; device < config.deviceCount; device++)
-        //    {
-        //        matrixY.Add(new List<int>());
-        //        matrixY[device].Add(1);
-        //    }
-
-        //    int maxBatchCount = 0;
-
-        //    for (int dataType = 0; dataType < config.dataTypesCount; dataType++)
-        //        maxBatchCount = Math.Max(maxBatchCount, matrixA[dataType].Count);
-
-        //    List<int> dataTypes = DataTypesInPriority();
-
-        //    for (int batch = 0; batch < maxBatchCount; batch++)
-        //    {
-        //        foreach (int dataType in dataTypes)
-        //        {
-        //            if (batch >= matrixA[dataType].Count)
-        //                continue;
-
-        //            bool success = AddBatchInSchedule(dataType, matrixA[dataType][batch]);
-        //            if(!success)
-        //            {
-        //                return false;
-        //            }
-        //        }
-        //    }
-
-        //    for (int device = 0; device < config.deviceCount; device++)
-        //        for (int batch = 0; batch < matrixY[device].Count(); batch++)
-        //            matrixY[device][batch] = 1;
-
-        //    bool b = Optimize();
-        //    return b;
-        //}
 
     }
 }

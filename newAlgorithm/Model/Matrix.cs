@@ -78,15 +78,15 @@ namespace newAlgorithm.Model
             set => _data[row, col] = value;
         }
 
-        public static List<List<int>> ToListList(Matrix _matrix)
+        public List<List<int>> ToListList()
         {
-            var result = new List<List<int>>(_matrix.Rows);
-            for (int i = 0; i < _matrix.Rows; ++i)
+            var result = new List<List<int>>(Rows);
+            for (int i = 0; i < Rows; ++i)
             {
-                result.Add(new List<int>(_matrix.Columns));
-                for (int j = 0; j < _matrix.Columns; ++j)
+                result.Add(new List<int>(Columns));
+                for (int j = 0; j < Columns; ++j)
                 {
-                    result[i].Add(_matrix[i, j]);
+                    result[i].Add(_data[i, j]);
                 }
             }
             return result;

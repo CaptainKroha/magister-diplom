@@ -1,9 +1,9 @@
 ﻿
 using magisterDiplom.Fabric;
 using magisterDiplom.Model.Configuration;
-using newAlgorithm.Model;
 using System.Collections.Generic;
 using System.Linq;
+using static magisterDiplom.Schedule;
 
 
 namespace magisterDiplom.HierarchicalGameModel
@@ -38,14 +38,7 @@ namespace magisterDiplom.HierarchicalGameModel
             
         }
 
-        public int F2_Criteria
-        {
-            get {
-                return schedule.F2_criteria(); 
-            }
-        }
-
-        public bool Build(List<int> m, List<List<int>> A_matrix)
+        public SecondLevelOutput Build(List<int> m, List<List<int>> A_matrix)
         {
             schedule.Update(m.Sum());
             List<int> dataTypes = schedule.DataTypesInPriority();
@@ -61,7 +54,8 @@ namespace magisterDiplom.HierarchicalGameModel
                 }
             }
 
-            return schedule.Optimize();
+            schedule.Optimize();
+            return schedule.Result();
         }
 
     }

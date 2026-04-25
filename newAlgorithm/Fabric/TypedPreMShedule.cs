@@ -31,7 +31,7 @@ namespace magisterDiplom.Fabric
             }
         }
 
-        public override bool Optimize()
+        public override void Optimize()
         {
             throw new NotImplementedException();
         }

@@ -13,6 +13,62 @@ namespace magisterDiplom
     public abstract class Schedule
     {
 
+        public class SecondLevelOutput
+        {
+            public bool Success { get; private set; }
+
+            public int F2_Criteria { get; private set; } = 0;
+
+            public List<List<int>> R_Matrix { get; private set; } = null;
+
+            public List<List<int>> P_Matrix { get; private set; } = null;
+
+            protected Dictionary<int, List<List<int>>> StartProcessing { get; private set; } = null;
+
+            public SecondLevelOutput(Schedule schedule)
+            {
+                Success = schedule.success;
+
+                if (!Success)
+                {
+                    return;
+                }
+
+                F2_Criteria = schedule.F2_criteria();
+                StartProcessing = schedule.startProcessing;
+
+                P_Matrix = new List<List<int>>(schedule.config.dataTypesCount);
+                for(int dataType = 0; dataType < schedule.config.dataTypesCount; ++dataType)
+                {
+                    P_Matrix.Add(new List<int>(schedule.ScheduleSize()));
+                    for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
+                        P_Matrix[schedule.BatchType(batch)][batch] = 1;
+                }
+
+                R_Matrix = new List<List<int>>(schedule.config.dataTypesCount);
+                for (int dataType = 0; dataType < schedule.config.dataTypesCount; ++dataType)
+                {
+                    R_Matrix.Add(new List<int>(schedule.ScheduleSize()));
+                    for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
+                        R_Matrix[schedule.BatchType(batch)][batch] = schedule.BatchSize(batch);
+                }
+            }
+
+            public int BatchType(int batch)
+            {
+                for(int row = 0; row < P_Matrix.Count; ++row)
+                {
+                    if(P_Matrix[row][batch] == 1)
+                    {
+                        return row;
+                    }
+                }
+
+                return -1;
+            }
+
+        }
+
         /// <summary>
         /// Конфигурационная структура содержащая информацию о конвейерной системе
         /// </summary>
@@ -23,36 +79,14 @@ namespace magisterDiplom
             config = configuration;
         }
 
-        /// <summary>
-        /// Матрица порядка и количества пакетов заданий [deviceCount]
-        /// </summary>
         protected List<Batch> schedule;
+
+        protected bool success;
 
         /// <summary>
         /// Словарь соответствий приборов и матриц моментов начала времени выполнения заданий
         /// </summary>
         protected Dictionary<int, List<List<int>>> startProcessing = new Dictionary<int, List<List<int>>>();
-
-        public Matrix R_matrix
-        { 
-            get {
-                var res = new Matrix(config.dataTypesCount, ScheduleSize());
-                for (int batch = 0; batch < ScheduleSize(); batch++)
-                    res[schedule[batch].Type, batch] = schedule[batch].Size;
-                return res;
-            } 
-        }
-
-        public Matrix P_matrix
-        {
-            get {
-                var res = new Matrix(config.dataTypesCount, ScheduleSize());
-                for (int batch = 0; batch < ScheduleSize(); batch++)
-                    res[schedule[batch].Type, batch] = 1;
-                return res;
-            }
-
-        }
 
         public int MakeSpan
         {
@@ -62,25 +96,17 @@ namespace magisterDiplom
             }
         }
 
-        /// <summary>
-        /// Возвращает 3 мерную матрицу моментов времени выполнения заданий
-        /// </summary>
-        /// <returns>Словарь соответствия прибора к матрице моментов времени выполнения заданий в пакетах</returns>
-        public Dictionary<int, List<List<int>>> GetStartProcessing()
-        {
-            CalcStartProcessing();
-            return startProcessing;
-        }
-
         protected abstract void CalcStartProcessing();
 
-        public abstract int F2_criteria();
+        protected abstract int F2_criteria();
 
         public abstract void Add(int dataType, int size);
 
-        public abstract bool Optimize();
+        public abstract void Optimize();
 
         public abstract void Update(int batchesCount);
+
+        public abstract SecondLevelOutput Result();
 
         public List<int> DataTypesInPriority()
         {
@@ -161,37 +187,6 @@ namespace magisterDiplom
         {
             return schedule[batch].Size;
         }
-
-        #region Старый интерфейс
-
-        /// <summary>
-        /// Возвращает матрицу количества заданий в пакетах
-        /// </summary>
-        /// <returns>Матрица количества заданий в пакетах</returns>
-        public List<List<int>> GetMatrixR()
-        {
-            return Matrix.ToListList(R_matrix);
-        }
-
-        /// <summary>
-        /// Возвращает матрицу порядка пакетов заданий
-        /// </summary>
-        /// <returns>Матрица порядка пакетов заданий</returns>
-        public List<List<int>> GetMatrixP()
-        {
-            return Matrix.ToListList(P_matrix);
-        }
-
-        /// <summary>
-        /// Возвращает критерий оптимизации makespan, определяющий время выполнения всех заданий в конвейерной системе
-        /// </summary>
-        /// <returns>Makespan - время выполнения всех заданий в системе</returns>
-        public int GetMakespan()
-        {
-            return MakeSpan;
-        }
-
-        #endregion
 
     }
 }
