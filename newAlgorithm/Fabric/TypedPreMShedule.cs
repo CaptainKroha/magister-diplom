@@ -44,7 +44,7 @@ namespace magisterDiplom.Fabric
             }
         }
 
-        protected override void AddNewPreMaintence()
+        protected override void AddPreMaintenceAfterLastBatch()
         {
             foreach (var y in Y_l)
             {
@@ -62,9 +62,5 @@ namespace magisterDiplom.Fabric
             return Y_l[device].PreMaintenceStatusAfter(packet);
         }
 
-        public override int CalculateCriteria_f2()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

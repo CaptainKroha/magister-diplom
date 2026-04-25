@@ -293,39 +293,37 @@ namespace magisterDiplom.Fabric
         /// <summary>
         /// Матрица порядка ПТО приборов
         /// </summary>
-        protected List<List<int>> matrixY;
-
         protected MatrixY _matrixY;
 
         public SimplePreMSchedule(PreMConfiguration configuration) : base(configuration)
         {
-            SetLogFile("tmp.json");
+            //SetLogFile("tmp.json");
 
-            // Если флаг оталдки установлен
-            if (IsDebug)
-            {
+            //// Если флаг оталдки установлен
+            //if (IsDebug)
+            //{
 
-                // Выводим информацию о переданной конфигурационной структуре
-                fstream.Write($"{config.ToString()}");
-            }
+            //    // Выводим информацию о переданной конфигурационной структуре
+            //    fstream.Write($"{config.ToString()}");
+            //}
         }
 
         /// <summary>
         /// Поток записи в файл
         /// </summary>
-        private JsonFileWriter fstream = null;
+        //private JsonFileWriter fstream = null;
 
         /// <summary>
         /// Установит файл записи
         /// </summary>
         /// <param name="filename">Имя файла для записи</param>
-        public void SetLogFile(string filename)
-        {
-            // Создаём объект для записи в файл
-            if (fstream != null)
-                fstream.FinalizeFile();
-            fstream = new JsonFileWriter(filename);
-        }
+        //public void SetLogFile(string filename)
+        //{
+        //    // Создаём объект для записи в файл
+        //    if (fstream != null)
+        //        fstream.FinalizeFile();
+        //    fstream = new JsonFileWriter(filename);
+        //}
 
         /// <summary>
         /// Закроет объект для записи в файла
@@ -338,360 +336,369 @@ namespace magisterDiplom.Fabric
         //    fstream = null;
         //}
 
-        /// <summary>
-        /// Вернёт индекс ПЗ за которым следует последнее ПТО
-        /// </summary>
-        /// <param name="device">Индекс прибора</param>
-        /// <returns>Индекс ПЗ за которым следует последнее ПТО или -1</returns>
-        //private int GetLastPreMPos(int device)
-        //{
+        public override void Update(int batchesCount)
+        {
+            base.Update(batchesCount);
+            _matrixY = new MatrixY(config.deviceCount);
 
-        //    // Выполняем обход по всем ПЗ
-        //    for (int batchIndex = _matrixY.Columns - 1; batchIndex >= 0; batchIndex--)
+        }
 
-        //        // Если в текущей позиции существует ПТО
-        //        if (HasPreMaintenceAfter(device, batchIndex))
-
-        //            // Возвращаем индекс данной позиции
-        //            return batchIndex;
-
-        //    // Вернём -1
-        //    return -1;
-        //}
-
-        /// <summary>
-        /// Функция проверяет допустимость решения
-        /// </summary>
-        /// <returns>true - если текущее решение допустимо. Иначе False</returns>
-        private bool IsSolutionAcceptable()
+        public override bool Optimize()
         {
 
-            for (int device = 0; device < config.deviceCount; device++)
-            
-                for (int batch = 0; batch < schedule.Count; batch++)
+            Calculate();
+            if (SolutionUnacceptable())
+            {
+                return false;
+            }
 
-                    if (HasPreMaintenceAfter(device, batch))
+            for (int batch = 0; batch < ScheduleSize() - 1; batch++)
+            {
+                for (int device = 0; device < config.deviceCount; device++)
+                {
+                    _matrixY.UnsetPreMaintence(device, batch);
+                    Calculate();
+                    if (SolutionUnacceptable())
                     {
-
-                        // Вычисляем момент времени окончания ПТО на текущем приборе в текущей позиции
-                        int time =
-
-                            // Момент времени начала выполнения последнего задания на текущем приборе в текущей позиции
-                            startProcessing[device][batch].Last() +
-
-                            // Время выполнения задания на текущем приборе в текущей позиции 
-                            config.proccessingTime[device, schedule[batch].Type];
-
-                        CalcMatrixTPM();
-
-                        // Проверяем ограничение надёжности
-                        if (!IsConstraint_CalcSysReliability(time)) {
-
-                            if (Form1.loggingOn)
-                                fstream.Write("Ограничение не выполняется");
-
-                            return false;
-                        }
-
-                        if (Form1.loggingOn)
-                            fstream.Write("Ограничение выполняется");
+                        _matrixY.SetPreMaintence(device, batch);
                     }
-            
+                }
+            }
+
             return true;
+        }       
+        
+        /// <summary>
+        /// Вернёт тип данных по переданному индексу ПЗ
+        /// </summary>
+        /// <param name="batchIndex">Индекс ПЗ</param>
+        /// <returns>Тип данных</returns>
+        public int GetDataTypeByBatchIndex(int batchIndex)
+        {
+            return schedule[batchIndex].Type;
+        }
+
+        /// <summary>
+        /// Возвращает матрицу ПТО приборов
+        /// </summary>
+        /// <returns>Матрица ПТО приборов</returns>
+        public List<List<int>> GetMatrixY()
+        {
+            return MatrixY.ToListList(_matrixY);
+        }
+
+        protected override void AddColumnY()
+        {
+            _matrixY.AddColumn();
+        }
+
+        protected override void AddPreMaintenceAfterLastBatch()
+        {
+            _matrixY.SetPreMaintenceLastPacketAllDevices();
+        }
+
+        protected override bool HasPreMaintenceAfter(int device, int packet)
+        {
+            return _matrixY.PreMaintenceStatusAfter(device, packet) == 1;
+        }
+
+        protected override int PreMaintenceStatusAfter(int device, int packet)
+        {
+            return _matrixY.PreMaintenceStatusAfter(device, packet);
         }
 
         //public override bool Build(List<List<int>> _matrixA)
         //{
         //    return true;
 
-            // return BuildWithoutLogging(_matrixA);
+        // return BuildWithoutLogging(_matrixA);
 
-            // Если установлено логирование
-            //if (Form1.loggingOn)
+        // Если установлено логирование
+        //if (Form1.loggingOn)
 
-            //    // Записываем данные в файл
-            //    fstream.Write("Начинаем выполнять операции на нижнем уровне;");
+        //    // Записываем данные в файл
+        //    fstream.Write("Начинаем выполнять операции на нижнем уровне;");
 
-            //List<List<int>> matrixA = ListUtils.MatrixIntDeepCopy(_matrixA);
+        //List<List<int>> matrixA = ListUtils.MatrixIntDeepCopy(_matrixA);
 
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
-            //{
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
+        //{
 
-            //    // Cоздаём экземпляр класса для работы со строками
-            //    StringBuilder str = new StringBuilder(200);
+        //    // Cоздаём экземпляр класса для работы со строками
+        //    StringBuilder str = new StringBuilder(200);
 
-            //    // Объявляем временную строку
-            //    str.AppendLine($"Матрица A:");
+        //    // Объявляем временную строку
+        //    str.AppendLine($"Матрица A:");
 
-            //    // Для каждого типа данных
-            //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-            //    {
+        //    // Для каждого типа данных
+        //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
+        //    {
 
-            //        // Добавляем новые данные в строку
-            //        str.Append($"\tТип {_dataType + 1}: ");
+        //        // Добавляем новые данные в строку
+        //        str.Append($"\tТип {_dataType + 1}: ");
 
-            //        // Для каждого пакета в векторе типа _dataType матрицы A
-            //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
+        //        // Для каждого пакета в векторе типа _dataType матрицы A
+        //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
 
-            //            // Добавляем в строку данные
-            //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
+        //            // Добавляем в строку данные
+        //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
 
-            //        // Добавляем перевод строки
-            //        str.Append(Environment.NewLine);
-            //    }
+        //        // Добавляем перевод строки
+        //        str.Append(Environment.NewLine);
+        //    }
 
-            //    // Записываем заголовок
-            //    fstream.Write(str.ToString());
-            //}
+        //    // Записываем заголовок
+        //    fstream.Write(str.ToString());
+        //}
 
-            //int dataType, maxBatchCount = 0, batch = 0, batchCount = 0;
+        //int dataType, maxBatchCount = 0, batch = 0, batchCount = 0;
 
-            //// Вычисляем максимальное количество пакетов среди всех типов данных
-            //calcMaxBatchCount();
+        //// Вычисляем максимальное количество пакетов среди всех типов данных
+        //calcMaxBatchCount();
 
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
 
-            //    // Записываем данные в файл
-            //    fstream.Write("maxBatchCount", maxBatchCount);
+        //    // Записываем данные в файл
+        //    fstream.Write("maxBatchCount", maxBatchCount);
 
-            //// Вернёт максимальное количество пакетов среди всех типов данных
-            //void calcMaxBatchCount()
-            //{
-            //    // Выполняем обработку по типам
-            //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        //// Вернёт максимальное количество пакетов среди всех типов данных
+        //void calcMaxBatchCount()
+        //{
+        //    // Выполняем обработку по типам
+        //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
 
-            //        // Выполняем поиск максимального количество пакетов
-            //        maxBatchCount = Math.Max(maxBatchCount, matrixA[dataType].Count);
-            //}
+        //        // Выполняем поиск максимального количество пакетов
+        //        maxBatchCount = Math.Max(maxBatchCount, matrixA[dataType].Count);
+        //}
 
-            //Dictionary<int, double> m = new Dictionary<int, double>(capacity: this.config.dataTypesCount);
-            //List<int> dataTypes = new List<int>(capacity: this.config.dataTypesCount);
-            //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-            //{
-            //    double sum = 0;
-            //    for (int device = 1; device < this.config.deviceCount; device++)
-            //        sum +=
-            //            (double)this.config.proccessingTime[device][dataType] /
-            //            (double)this.config.proccessingTime[device - 1][dataType];
-            //    m.Add(dataType, sum);
-            //}
+        //Dictionary<int, double> m = new Dictionary<int, double>(capacity: this.config.dataTypesCount);
+        //List<int> dataTypes = new List<int>(capacity: this.config.dataTypesCount);
+        //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        //{
+        //    double sum = 0;
+        //    for (int device = 1; device < this.config.deviceCount; device++)
+        //        sum +=
+        //            (double)this.config.proccessingTime[device][dataType] /
+        //            (double)this.config.proccessingTime[device - 1][dataType];
+        //    m.Add(dataType, sum);
+        //}
 
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
 
-            //    // Записываем данные в файл
-            //    fstream.Write($"Типы данных:");
+        //    // Записываем данные в файл
+        //    fstream.Write($"Типы данных:");
 
-            //while (m.Any())
-            //{
-            //    int myDataType = m.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
-            //    dataTypes.Add(myDataType);
-            //    // Если установлено логирование
-            //    if (Form1.loggingOn)
-
-            //        // Записываем данные в файл
-            //        fstream.Write($"{myDataType}: {m[myDataType]}");
-            //    m.Remove(myDataType);
-            //}
-
-
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
-            //{
-
-            //    // Выводим информацию
-            //    fstream.Write("dataTypes:");
-
-            //    // Для каждого типа
-            //    for (int _dataType = 0; _dataType < this.config.dataTypesCount; _dataType++)
-
-            //        // Выводим информацию
-            //        fstream.Write($"{_dataType}: {dataTypes[_dataType]}");
-            //}
-
-            //// Сортируем матрицу A
-            //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-            //    matrixA[dataType].Sort();
-
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
-            //{
-
-            //    // Cоздаём экземпляр класса для работы со строками
-            //    StringBuilder str = new StringBuilder(200);
-
-            //    // Объявляем временную строку
-            //    str.AppendLine($"Матрица A:");
-
-            //    // Для каждого типа данных
-            //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-            //    {
-
-            //        // Добавляем новые данные в строку
-            //        str.Append($"\tТип {_dataType + 1}: ");
-
-            //        // Для каждого пакета в векторе типа _dataType матрицы A
-            //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
-
-            //            // Добавляем в строку данные
-            //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
-
-            //        // Добавляем перевод строки
-            //        str.Append(Environment.NewLine);
-            //    }
-
-            //    // Записываем заголовок
-            //    fstream.Write(str.ToString());
-            //}
-
-            //batch = dataType = 0;
-
-            //// Объявляем количество пакетов заданий
-            
-
-            //// Для каждого типа данных
-            //for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
-
-            //    // Увеличиваем общее количество пакетов заданий
-            //    batchCount += matrixA[_dataType].Count();
-
-            //// П.2 Добавляем 
-            //this.schedule = new List<Batch>(batchCount) { new Batch(
-            //    dataTypes[dataType],
-            //    matrixA[dataTypes[dataType]][batch]
-            //)};
-            //dataType++;
+        //while (m.Any())
+        //{
+        //    int myDataType = m.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+        //    dataTypes.Add(myDataType);
+        //    // Если установлено логирование
+        //    if (Form1.loggingOn)
 
-            //// Если логирование установлено
-            //if (Form1.loggingOn) {
-            //    CalcStartProcessing();
-            //    fstream.WriteScheduleAsTable(schedule);
-            //}
-            //// П.3 Инициализируем матрицу Y
-            //this.matrixY = new List<List<int>>(capacity: this.config.deviceCount);
-            //for (int device = 0; device < this.config.deviceCount; device++)
-            //{
-            //    this.matrixY.Add(new List<int>());
-            //    this.matrixY[device].Add(1);
-            //}
-            //// Если логирование установлено
-            //if (Form1.loggingOn)
-            //{
-            //    fstream.WriteMatrixYAsTable(matrixY);
-            //}
+        //        // Записываем данные в файл
+        //        fstream.Write($"{myDataType}: {m[myDataType]}");
+        //    m.Remove(myDataType);
+        //}
 
-            //// Для каждого типа данных выполняем обрабоку
-            //for (; dataType < this.config.dataTypesCount; dataType++)
-            //{
 
-            //    // Добавляем ПЗ в расписание 
-            //    this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
-            //    for (int device = 0; device < this.config.deviceCount; device++)
-            //        this.matrixY[device].Add(0);
-            //    CalcStartProcessing();
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
+        //{
 
-            //    // Если логирование установлено
-            //    if (Form1.loggingOn)
-            //    {
-            //        fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-            //    }
+        //    // Выводим информацию
+        //    fstream.Write("dataTypes:");
 
-            //    // Если не было найдено расписания удовлетворяющему условию надёжности
-            //    if (!this.SearchByPosition(5)) {
+        //    // Для каждого типа
+        //    for (int _dataType = 0; _dataType < this.config.dataTypesCount; _dataType++)
+
+        //        // Выводим информацию
+        //        fstream.Write($"{_dataType}: {dataTypes[_dataType]}");
+        //}
+
+        //// Сортируем матрицу A
+        //for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        //    matrixA[dataType].Sort();
+
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
+        //{
+
+        //    // Cоздаём экземпляр класса для работы со строками
+        //    StringBuilder str = new StringBuilder(200);
+
+        //    // Объявляем временную строку
+        //    str.AppendLine($"Матрица A:");
+
+        //    // Для каждого типа данных
+        //    for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
+        //    {
+
+        //        // Добавляем новые данные в строку
+        //        str.Append($"\tТип {_dataType + 1}: ");
+
+        //        // Для каждого пакета в векторе типа _dataType матрицы A
+        //        for (int _batchIndex = 0; _batchIndex < matrixA[_dataType].Count(); _batchIndex++)
+
+        //            // Добавляем в строку данные
+        //            str.Append($"{matrixA[_dataType][_batchIndex]} ");
+
+        //        // Добавляем перевод строки
+        //        str.Append(Environment.NewLine);
+        //    }
+
+        //    // Записываем заголовок
+        //    fstream.Write(str.ToString());
+        //}
+
+        //batch = dataType = 0;
 
-            //        // Закрываем файл
-            //        UnsetLogFile();
+        //// Объявляем количество пакетов заданий
+
 
-            //        // Возвращаем флаг неудачи
-            //        return false;
-            //    }
+        //// Для каждого типа данных
+        //for (int _dataType = 0; _dataType < matrixA.Count(); _dataType++)
+
+        //    // Увеличиваем общее количество пакетов заданий
+        //    batchCount += matrixA[_dataType].Count();
 
-            //    // Выполняем оптимизацию для позиций ПТО приборов
-            //    // this.ShiftMatrixY();
+        //// П.2 Добавляем 
+        //this.schedule = new List<Batch>(batchCount) { new Batch(
+        //    dataTypes[dataType],
+        //    matrixA[dataTypes[dataType]][batch]
+        //)};
+        //dataType++;
 
-            //    // Проверяем условие надёжности
-            //    // if (!this.IsSolutionAcceptable()) {
+        //// Если логирование установлено
+        //if (Form1.loggingOn) {
+        //    CalcStartProcessing();
+        //    fstream.WriteScheduleAsTable(schedule);
+        //}
+        //// П.3 Инициализируем матрицу Y
+        //this.matrixY = new List<List<int>>(capacity: this.config.deviceCount);
+        //for (int device = 0; device < this.config.deviceCount; device++)
+        //{
+        //    this.matrixY.Add(new List<int>());
+        //    this.matrixY[device].Add(1);
+        //}
+        //// Если логирование установлено
+        //if (Form1.loggingOn)
+        //{
+        //    fstream.WriteMatrixYAsTable(matrixY);
+        //}
 
-            //        // Закрываем файл
-            //        // UnsetLogFile();
+        //// Для каждого типа данных выполняем обрабоку
+        //for (; dataType < this.config.dataTypesCount; dataType++)
+        //{
 
-            //        // Возвращаем флаг неудачи
-            //        // return false;
-            //    // }
-            //}
+        //    // Добавляем ПЗ в расписание 
+        //    this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
+        //    for (int device = 0; device < this.config.deviceCount; device++)
+        //        this.matrixY[device].Add(0);
+        //    CalcStartProcessing();
 
-            //// Увеличиваем индекс вставляемого пакета задания
-            //batch++;
+        //    // Если логирование установлено
+        //    if (Form1.loggingOn)
+        //    {
+        //        fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
+        //    }
 
-            //// Выполняем обработку
-            //while (batch < maxBatchCount)
-            //{
+        //    // Если не было найдено расписания удовлетворяющему условию надёжности
+        //    if (!this.SearchByPosition(5)) {
 
-            //    // Выполняем обработку для каждого типа данных
-            //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
-            //    {
+        //        // Закрываем файл
+        //        UnsetLogFile();
 
-            //        // Если индекс пакета превышает максимальный размер пакетов для типа данных dataType
-            //        if (batch >= matrixA[dataTypes[dataType]].Count)
+        //        // Возвращаем флаг неудачи
+        //        return false;
+        //    }
 
-            //            // Продолжаем обработку для следующего типа данных
-            //            continue;
+        //    // Выполняем оптимизацию для позиций ПТО приборов
+        //    // this.ShiftMatrixY();
 
-            //        // Добавляем ПЗ в расписание 
-            //        this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
-            //        for (int device = 0; device < this.config.deviceCount; device++)
-            //            this.matrixY[device].Add(0);
+        //    // Проверяем условие надёжности
+        //    // if (!this.IsSolutionAcceptable()) {
 
-            //        // Если не было найдено расписания удовлетворяющему условию надёжности
-            //        if (!this.SearchByPosition(5)) {
+        //        // Закрываем файл
+        //        // UnsetLogFile();
 
-            //            // Закрываем файл
-            //            UnsetLogFile();
+        //        // Возвращаем флаг неудачи
+        //        // return false;
+        //    // }
+        //}
 
-            //            // Возвращаем флаг неудачи
-            //            return false;
-            //        }
+        //// Увеличиваем индекс вставляемого пакета задания
+        //batch++;
 
-            //        // Выполняем оптимизацию для позиций ПТО приборов (ШАГ 15)
-            //        // this.ShiftMatrixY();
+        //// Выполняем обработку
+        //while (batch < maxBatchCount)
+        //{
 
-            //        // Проверяем условие надёжности
-            //        // if (!this.IsSolutionAcceptable()) {
+        //    // Выполняем обработку для каждого типа данных
+        //    for (dataType = 0; dataType < this.config.dataTypesCount; dataType++)
+        //    {
 
-            //            // Закрываем файл
-            //            // UnsetLogFile();
+        //        // Если индекс пакета превышает максимальный размер пакетов для типа данных dataType
+        //        if (batch >= matrixA[dataTypes[dataType]].Count)
 
-            //            // Возвращаем флаг неудачи
-            //            // return false;
-            //        // }
-            //    }
+        //            // Продолжаем обработку для следующего типа данных
+        //            continue;
 
-            //    // Увеличиваем индекс пакета
-            //    batch++;
-            //}
+        //        // Добавляем ПЗ в расписание 
+        //        this.schedule.Add(new Batch(dataTypes[dataType], matrixA[dataTypes[dataType]][batch]));
+        //        for (int device = 0; device < this.config.deviceCount; device++)
+        //            this.matrixY[device].Add(0);
 
+        //        // Если не было найдено расписания удовлетворяющему условию надёжности
+        //        if (!this.SearchByPosition(5)) {
 
-            //// Формируем матрицу со всеми единицами в ПТО
-            //// = new List<List<int>>(capacity: config.deviceCount);
+        //            // Закрываем файл
+        //            UnsetLogFile();
 
-            //for (int device = 0; device < matrixY.Count(); device++)
-            //    for (int batchIndex = 0; batchIndex < matrixY[device].Count(); batchIndex++)
-            //        matrixY[device][batchIndex] = 1;
+        //            // Возвращаем флаг неудачи
+        //            return false;
+        //        }
 
-            //// Возвращяем флаг удачного построения расписания
-            //bool b = Optimize();
+        //        // Выполняем оптимизацию для позиций ПТО приборов (ШАГ 15)
+        //        // this.ShiftMatrixY();
 
-            //// Если установлено логирование
-            //if (Form1.loggingOn)
-            //{
+        //        // Проверяем условие надёжности
+        //        // if (!this.IsSolutionAcceptable()) {
 
-            //    // Записываем данные в файл
-            //    fstream.Write("Начинаем выполнять операции на нижнем уровне");
-            //}
+        //            // Закрываем файл
+        //            // UnsetLogFile();
 
-            //return b;
+        //            // Возвращаем флаг неудачи
+        //            // return false;
+        //        // }
+        //    }
+
+        //    // Увеличиваем индекс пакета
+        //    batch++;
+        //}
+
+
+        //// Формируем матрицу со всеми единицами в ПТО
+        //// = new List<List<int>>(capacity: config.deviceCount);
+
+        //for (int device = 0; device < matrixY.Count(); device++)
+        //    for (int batchIndex = 0; batchIndex < matrixY[device].Count(); batchIndex++)
+        //        matrixY[device][batchIndex] = 1;
+
+        //// Возвращяем флаг удачного построения расписания
+        //bool b = Optimize();
+
+        //// Если установлено логирование
+        //if (Form1.loggingOn)
+        //{
+
+        //    // Записываем данные в файл
+        //    fstream.Write("Начинаем выполнять операции на нижнем уровне");
+        //}
+
+        //return b;
         //}
 
         //private bool BuildWithoutLogging(List<List<int>> _matrixA)
@@ -746,1118 +753,5 @@ namespace magisterDiplom.Fabric
         //    return b;
         //}
 
-        //private List<int> DataTypesInPriority()
-        //{
-        //    Dictionary<int, double> m = new Dictionary<int, double>(capacity: config.dataTypesCount);
-
-        //    for (int dataType = 0; dataType < config.dataTypesCount; dataType++)
-        //    {
-        //        double sum = 0;
-        //        for (int device = 1; device < config.deviceCount; device++)
-        //            sum +=
-        //                (double)config.proccessingTime[device, dataType] /
-        //                (double)config.proccessingTime[device - 1, dataType];
-        //        m.Add(dataType, sum);
-        //    }
-
-        //    List<int> dataTypes = new List<int>(capacity: config.dataTypesCount);
-
-        //    while (m.Any())
-        //    {
-        //        int myDataType = m.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
-        //        dataTypes.Add(myDataType);
-        //        m.Remove(myDataType);
-        //    }
-
-        //    return dataTypes;
-        //}
-
-        //private bool AddBatchInSchedule(int dataType, int size)
-        //{
-        //    schedule.Add(new Batch(dataType, size));
-        //    for (int device = 0; device < config.deviceCount; device++)
-        //        matrixY[device].Add(0);
-
-        //    CalcStartProcessing();
-
-        //    // Если не было найдено расписания удовлетворяющему условию надёжности
-        //    if (!SearchByPosition(5))
-        //    {
-        //        UnsetLogFile();
-        //        return false;
-        //    }
-        //    return true;
-        //}
-
-        public override void Update(int batchesCount)
-        {
-            base.Update(batchesCount);
-            _matrixY = new MatrixY(config.deviceCount);
-
-        }
-
-        public override bool Optimize()
-        {
-            //if (Form1.loggingOn)
-            //{
-            //    fstream.Write("OptimizeMatrixY::start");
-            //    fstream.WriteMatrixYAsTable(matrixY);
-            //}
-
-            CalcStartProcessing();
-
-            if (!IsSolutionAcceptable())
-            {
-                //if (Form1.loggingOn)
-                //{
-                //    fstream.Write("OptimizeMatrixY::result");
-                //    fstream.Write("OptimizeMatrixY::BAD");
-                //    fstream.WriteMatrixYAsTable(matrixY);
-                //}
-
-                return false;
-            }
-
-            int device = 0;
-            for (int batchIndex = 0; batchIndex < _matrixY.Columns - 1; batchIndex++)
-            {
-                for (; device < config.deviceCount; device++)
-                {
-
-                    //if (Form1.loggingOn)
-                    //{
-                    //    fstream.Write("OptimizeMatrixY::switch-0");
-                    //    fstream.WriteMatrixYAsTable(matrixY);
-                    //}
-
-                    _matrixY.UnsetPreMaintence(device, batchIndex);
-                    CalcStartProcessing();
-
-                    if (!IsSolutionAcceptable())
-                    {
-                        //if (Form1.loggingOn)
-                        //{
-                        //    fstream.Write("OptimizeMatrixY::switch-1-BAD");
-                        //    fstream.WriteMatrixYAsTable(matrixY);
-                        //}
-                        _matrixY.SetPreMaintence(device, batchIndex);
-                    }
-                    //else if (Form1.loggingOn)
-                    //{
-                    //    fstream.Write("OptimizeMatrixY::switch-0-GOOD");
-                    //    fstream.WriteMatrixYAsTable(matrixY);
-                    //}
-                }
-                device = 0;
-            }
-
-            //if (Form1.loggingOn)
-            //{
-            //    fstream.Write("OptimizeMatrixY::result");
-            //    fstream.Write("OptimizeMatrixY::GOOD");
-            //    fstream.WriteMatrixYAsTable(matrixY);
-            //}
-
-            return true;
-        }
-
-        // ВЫРАЖЕНИЕ 7
-        /// <summary>
-        /// Возвращает простои для переданного индекса прибора, данного расписания
-        /// </summary>
-        /// <returns>Время простоя для переданного индекса прибора</returns>
-        private int GetDowntimeByDevice(int device)
-        {
-
-            // Если установлено логирование и объект для записи существует
-            if (Form1.loggingOn)
-
-                // Записываем данные в файл
-                fstream.Write($"Вычисляем простои для прибора {device}");
-
-            // Объявляем и инициализируем простои
-            int downtime = 0;
-
-            // Подсчитываем простои связанные с наладкой
-            downtime += startProcessing[device].First().First();
-
-            // Для кажого задания пакета на первой позиции
-            for (int job = 1; job < startProcessing[device].First().Count(); job++)
-
-                // Подсчитываем простои между заданиями
-                downtime +=
-
-                    // Момент начала времени выполнения текущего задания
-                    startProcessing[device][0][job] -
-
-                    // Момент окончания времени выполнения предыдущего задания
-                    (
-                        // Момент начала времени выполнения предыдущего задания
-                        startProcessing[device][0][job - 1] +
-
-                        // Время выполнения предыдущего задания
-                        config.proccessingTime[device, schedule[0].Type]
-                    );
-
-            // Для каждого пакета со второго выполняем обработку
-            for (int batchIndex = 1; batchIndex < startProcessing[device].Count(); batchIndex++)
-            {
-
-                // Подсчитываем простои между пакетами
-                downtime +=
-
-                    // Момент начала времени выполнения первого задания текущего пакет
-                    startProcessing[device][batchIndex][0] -
-
-                    // Момент начала времени выполнения последнего задания на предыдущем пакете
-                    (startProcessing[device][batchIndex - 1].Last() +
-
-                    // Время выполнения задания в предыдущем пакете
-                    config.proccessingTime[device, schedule[batchIndex - 1].Type]);
-
-                // Для кажого задания пакета на первой позиции
-                for (int job = 1; job < startProcessing[device][batchIndex].Count(); job++)
-
-                    // Подсчитываем простои между заданиями
-                    downtime +=
-
-                        // Момент начала времени выполнения текущего задания
-                        startProcessing[device][batchIndex][job] -
-
-                        // Момент окончания времени выполнения предыдущего задания
-                        (
-                            // Момент начала времени выполнения предыдущего задания
-                            startProcessing[device][batchIndex][job - 1] +
-
-                            // Время выполнения предыдущего задания
-                            config.proccessingTime[device, schedule[batchIndex].Type]
-                        );
-            }
-            
-            // Возвращаем результат
-            return downtime;
-        }
-
-        // ВЫРАЖЕНИЕ 8 ДЛЯ ВСЕХ ПРИБОРОВ
-        /// <summary>
-        /// Возвращает общие простои для данного расписания
-        /// </summary>
-        /// <returns>Время простоя</returns>
-        //public int GetDowntime()
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn && fstream != null)
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Вычисляем простои для всех приборов");
-
-        //    // Объявляем и инициализируем простои
-        //    int downtime = 0;
-
-        //    // Для каждого прибора выполняем обработку
-        //    for (int device = 0; device < config.deviceCount; device++)
-        //    {
-
-        //        // Подсчитываем простои связанные с наладкой
-        //        downtime += startProcessing[device].First().First();
-
-        //        // Для кажого задания пакета на первой позиции
-        //        for (int job = 1; job < startProcessing[device].First().Count(); job++)
-
-        //            // Подсчитываем простои между заданиями
-        //            downtime +=
-
-        //                // Момент начала времени выполнения текущего задания
-        //                startProcessing[device][0][job] -
-
-        //                // Момент начала времени выполнения предыдущего задания
-        //                (startProcessing[device][0][job - 1] +
-
-        //                // Время выполнения предыдущего задания
-        //                config.proccessingTime[device, schedule[0].Type]);
-
-        //        // Для каждого пакета со второго выполняем обработку
-        //        for (int batchIndex = 1; batchIndex < startProcessing[device].Count(); batchIndex++)
-        //        {
-
-        //            // Подсчитываем простои между пакетами
-        //            downtime +=
-
-        //                // Момент начала времени выполнения первого задания текущего пакет
-        //                startProcessing[device][batchIndex][0] -
-
-        //                // Момент начала времени выполнения последнего задания на предыдущем пакете
-        //                (startProcessing[device][batchIndex - 1].Last() +
-
-        //                // Время выполнения задания в предыдущем пакете
-        //                config.proccessingTime[device, schedule[batchIndex - 1].Type]);
-
-        //            // Для кажого задания пакета на первой позиции
-        //            for (int job = 1; job < startProcessing[device][batchIndex].Count(); job++)
-
-        //                // Подсчитываем простои между заданиями
-        //                downtime +=
-
-        //                    // Момент начала времени выполнения текущего задания
-        //                    startProcessing[device][batchIndex][job] -
-
-        //                    // Момент начала времени выполнения предыдущего задания
-        //                    (startProcessing[device][batchIndex][job - 1] +
-
-        //                    // Время выполнения предыдущего задания
-        //                    config.proccessingTime[device, schedule[batchIndex].Type]);
-        //        }
-        //    }
-
-        //    // Возвращаем результат
-        //    return downtime;
-        //}
-
-        /// <summary>
-        /// Возвращает общие простои для данного расписания без ПТО
-        /// </summary>
-        /// <returns>Время простоя</returns>
-        public int GetDowntimeWithoutPreM()
-        {
-
-            // Если установлено логирование и объект для записи существует
-            if (Form1.loggingOn && fstream != null)
-
-                // Записываем данные в файл
-                fstream.Write("Вычисляем простои для всех приборов");
-
-            // Объявляем и инициализируем простои
-            int downtime = 0;
-
-            // Для каждого прибора выполняем обработку
-            for (int device = 0; device < config.deviceCount; device++)
-            {
-
-                // Подсчитываем простои связанные с наладкой
-                downtime += startProcessing[device].First().First();
-
-                // Для кажого задания пакета на первой позиции
-                for (int job = 1; job < startProcessing[device].First().Count(); job++)
-
-                    // Подсчитываем простои между заданиями
-                    downtime +=
-
-                        // Момент начала времени выполнения текущего задания
-                        startProcessing[device][0][job] -
-
-                        // Момент начала времени выполнения предыдущего задания
-                        (startProcessing[device][0][job - 1] +
-
-                        // Время выполнения предыдущего задания
-                        config.proccessingTime[device, schedule[0].Type]);
-
-                // Для каждого пакета со второго выполняем обработку
-                for (int batchIndex = 1; batchIndex < startProcessing[device].Count(); batchIndex++)
-                {
-
-                    // Подсчитываем простои между пакетами
-                    downtime +=
-
-                        // Момент начала времени выполнения первого задания текущего пакет
-                        startProcessing[device][batchIndex][0] -
-
-                        // Момент начала времени выполнения последнего задания на предыдущем пакете
-                        (startProcessing[device][batchIndex - 1].Last() +
-
-                        // Время выполнения задания в предыдущем пакете
-                        config.proccessingTime[device, schedule[batchIndex - 1].Type]);
-
-                    // Для кажого задания пакета на первой позиции
-                    for (int job = 1; job < startProcessing[device][batchIndex].Count(); job++)
-
-                        // Подсчитываем простои между заданиями
-                        downtime +=
-
-                            // Момент начала времени выполнения текущего задания
-                            startProcessing[device][batchIndex][job] -
-
-                            // Момент начала времени выполнения предыдущего задания
-                            (startProcessing[device][batchIndex][job - 1] +
-
-                            // Время выполнения предыдущего задания
-                            config.proccessingTime[device, schedule[batchIndex].Type]);
-                }
-            }
-
-            // Вычитаем простои связанные с ПТО
-            for (int device = 0; device < config.deviceCount; device++)
-                for (int batchIndex = 0; batchIndex < _matrixY.Columns - 1; batchIndex++)
-                    downtime -= PreMaintenceStatusAfter(device, batchIndex) * config.preMaintenanceTimes[device];
-
-            // Возвращаем результат
-            return downtime;
-        }
-
-        /// <summary>
-        /// Функция выполняет подсчёт критерий F2
-        /// </summary>
-        /// <returns>f2 критерий</returns>
-        public override int CalculateCriteria_f2() 
-        {
-            // Если установлено логирование и объект для записи существует
-            //if (Form1.loggingOn && fstream != null)
-            //{
-
-            //    // Записываем данные в файл
-            //    fstream.Write("Вычисляем критерий f2;");
-
-            //    // Выводим информацию о матрице начал моментов времени выполнения
-            //    fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-            //}
-
-            // Добавляем простои
-            int f2 = 0;
-            int prem = 0;
-
-            // Высчитываем простои связанные с ПТО
-            for (int device = 0; device < config.deviceCount; device++)
-                for (int batchIndex = 0; batchIndex < _matrixY.Columns; batchIndex++)
-                    prem += PreMaintenceStatusAfter(device, batchIndex) * config.preMaintenanceTimes[device];
-            f2 += GetDowntimeWithoutPreM(); // * downtimeC
-            f2 += prem; // * premC
-
-            // Возвращяем сигма критерий
-            return f2;
-        }
-
-        // ВЫРАЖЕНИЕ 8 ДЛЯ ОДНОГО ПРИБОРА
-        /// <summary>
-        /// Возвращаем полезность для прибора по переданному индексу
-        /// </summary>
-        /// <returns>Критерий полезности</returns>
-        //private int GetUtilityByDevice(int device)
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write($"Вычисляем полезность для прибора {device}");
-
-        //    // Объявляем значение критерия на нижнем уровне
-        //    int sum = 0;
-
-        //    // Добавляем момент времени окончания всех заданий на приборе
-        //    sum +=
-
-        //        // Момент начала времени выполнения на последнем задании в последнем пакете
-        //        this.startProcessing[device].Last().Last() +
-
-        //        // Время выполнения последнего заданий в последенем пакете
-        //        this.config.proccessingTime[device][this.schedule.Last().Type];
-
-        //    // Вычитаем простои
-        //    sum -= this.GetDowntimeByDevice(device);
-
-        //    // Возвращаем критерий
-        //    return sum;
-        //}
-
-        // ВЫРАЖЕНИЕ 8
-        
-        /// <summary>
-        /// Возвращаем полезность для данного расписания
-        /// </summary>
-        /// <returns>Время полезности</returns>
-        //public int GetUtility()
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Вычисляем полезность для всех приборов");
-
-        //    // Объявляем значение критерия на нижнем уровне
-        //    int sum = 0;
-
-        //    // Для каждого прибора выполняем обработку
-        //    for (int device = 0; device < this.config.deviceCount; device++)
-            
-        //        // Добавляем критерий для данного прибора
-        //        sum += this.GetUtilityByDevice(device);
-            
-        //    // Возвращаем критерий
-        //    return sum;
-        //}
-
-        // ВЫРАЖЕНИЕ 9
-        
-        /// <summary>
-        /// Возвращает сумму полезности и интервалов между ПТО для данного расписания
-        /// </summary>
-        /// <returns>Сумма полезности и интервалов между ПТО</returns>
-        //public int GetPreMUtility()
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn) {
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Вычисляем полезность с учётом ПТО для всех приборов");
-
-        //        // Выводим информацию о матрице начал моментов времени выполнения
-        //        fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-
-        //        // Выводим информацию
-        //        fstream.Write("GetPreMUtility start: Вычисляем сумму полезности и итервалов между ПТО");
-        //    }
-
-        //    // Объявляем значение критерия на нижнем уровне
-        //    int sum = 0;
-
-        //    // Для каждого прибора выполняем обработку
-        //    for (int device = 0; device < config.deviceCount; device++)
-        //    {
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn) {
-        //            fstream.Write("device", device);
-        //            fstream.Write($"Момент окончания последнего задания { this.startProcessing[device].Last().Last() + this.config.proccessingTime[device][this.schedule.Last().Type] }");
-        //        }
-
-        //        // Добавляем момент времени окончания всех заданий на приборе
-        //        sum +=
-                    
-        //            // Момент начала времени выполнения на последнем задании в последнем пакете
-        //            this.startProcessing[device].Last().Last() +
-
-        //            // Время выполнения последнего заданий в последенем пакете
-        //            this.config.proccessingTime[device][this.schedule.Last().Type];
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //            fstream.Write($"Простои для данного прибора с учётом ПТО { this.GetDowntimeByDevice(device) }");
-
-        //        // Вычитаем простои
-        //        sum -= this.GetDowntimeByDevice(device);
-
-        //        int intervals = matrixTPM[device].First().TimePreM;
-
-        //        // Для каждого пакета выполняем обработку
-        //        for (int batchIndex = 1; batchIndex < matrixTPM[device].Count(); batchIndex++)
-
-        //            // Добавляем интервалы времени между ПТО разных пакетов
-        //            intervals += matrixTPM[device][batchIndex].TimePreM - matrixTPM[device][batchIndex - 1].TimePreM;
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //            fstream.Write("Интервалы времени между ПТО", intervals);
-                
-        //        // Выполняем подсчёт суммы интервалов времени на первом пакете ПТО
-        //        sum += intervals;
-        //    }
-
-        //    // Если логирование установлено
-        //    if (Form1.loggingOn)
-        //        fstream.Write("Критерий f2", sum);
-
-        //    // Возвращаем критерий
-        //    return sum;
-        //}
-
-        // ВЫРАЖЕНИЕ 10
-        
-        /// <summary>
-        /// Возвращает надёжность, которая определяет вероятность находится ли некий прибор в работоспособном состоянии
-        /// </summary>
-        /// <param name="activity_time">Время активности прибора с момента последнего ПТО</param>
-        /// <param name="device">Индекс прибора для которого расчитывается надёжность</param>
-        /// <returns>Надёжность прибора по индексу device</returns>
-        private double CalcReliabilityByDevice(int activity_time, int device)
-        {
-
-            if (Form1.loggingOn)
-                fstream.Write($"Вычисляем надёжность для прибора {device} с временем активности {activity_time}");
-
-            // Выполняем расчёт и возврат доступности
-            return (activity_time == 0) ? 1 :
-                (double) config.restoringDevice[device] / (double)(config.failureRates[device] + config.restoringDevice[device]) +
-                (double) config.failureRates[device]    / (double)(config.failureRates[device] + config.restoringDevice[device]) *
-                (double) Math.Exp(-1 * (double)(config.failureRates[device] + config.restoringDevice[device]) * (double)activity_time);
-        }
-
-        // Выражение 12
-        
-        /// <summary>
-        /// Функция вернёт время активности прибора от предыдущего ПТО
-        /// </summary>
-        /// <param name="device">Индекс прибора для которого расчитывается время активности</param>
-        /// <param name="time">Крайний момент времени</param>
-        /// <returns>Время активности</returns>
-        private int GetActivityTimeByDevice(int device, int time)
-        {
-
-            if (Form1.loggingOn)
-                fstream.Write($"Вычисляем временя активности для прибора {device + 1} для момента времени {time};");
-
-            // Определяем начальный индекс
-            int batchIndex = GetBatchIndex(device, time) + 1;
-
-            // Определяем время активности
-            int activityTime = 0;
-
-            // Для каждого пакет выполняем обработку
-            for (; batchIndex < schedule.Count; batchIndex++)
-
-                // Для каждого задания выполняем обработку
-                for (int job = 0; job < startProcessing[device][batchIndex].Count; job++)
-                {
-
-                    // Если момент начала времени выполнения выходит за границу
-                    if (startProcessing[device][batchIndex][job] >= time)
-
-                        // Вернём время активности
-                        return activityTime;
-
-                    // Высчитываем время выполнения
-                    int proc_time = config.proccessingTime[device, schedule[batchIndex].Type];
-
-                    // Высчитываем момент начала времени выполнения
-                    int start_time = startProcessing[device][batchIndex][job];
-
-                    // Если момент окончания задания выходит за указанные границы
-                    if (start_time + proc_time > time)
-                    {
-                        // Увеличиваем время активности до прибора
-                        activityTime += time - start_time;
-                        return activityTime;
-                    }
-
-                    // Увеличиваем время активности прибора
-                    activityTime += proc_time;
-                }
-
-            // Возвращаем время активности
-            return activityTime;
-        }
-
-        // ВЫРАЖЕНИЕ 13
-
-        /// <summary>
-        /// Возвращает доступность для всех приборов для указанного момента времени
-        /// </summary>
-        /// <param name="time">Момент времени для которого выполняется расчёт надёжности</param>
-        /// <returns>Доступность для всех приборов</returns>
-        private double CalcSysReliability(int time)
-        {
-
-            if (Form1.loggingOn)
-
-                fstream.Write($"Вычисляем системную надёжность для момента времени {time}");
-            
-            double reliability = 1;
-
-            // Объявляем время активности
-            int activity_time;
-
-            // Для каждого прибора подсчитываем надёжность
-            for (int device = 0; device < config.deviceCount; device++) {
-
-                activity_time = GetActivityTimeByDevice(device, time);
-
-                if (Form1.loggingOn)
-                    fstream.Write($"\tДля прибора {device} время активности {activity_time} и надёжность {CalcReliabilityByDevice(activity_time, device):0.000}");
-                
-                // Если прибор не был активным
-                if (activity_time == 0)
-                    continue;
-
-                // Выполняем расчёт надёжности
-                reliability *= CalcReliabilityByDevice(activity_time, device);
-            }
-
-            return reliability;
-        }
-
-        // ВЫРАЖЕНИЕ 18
-
-        /// <summary>
-        /// Возвращаем результат расчёта ограничения на общую надёжность
-        /// </summary>
-        /// <param name="time">Момент времени для которого выполняется расчёт надёжности</param>
-        /// <returns>true, если ограничение выполняется. Иначе false</returns>
-        private bool IsConstraint_CalcSysReliability(int time)
-        {
-
-            if (Form1.loggingOn)
-
-                fstream.Write($"Проверяем ограничение 16 для момента времени {time};");
-
-            double sysTime = CalcSysReliability(time);
-            return (sysTime >= config.beta);
-        }
-
-        // ВЫРАЖЕНИЕ 20 
-        
-        /// <summary>
-        /// Возвращает индекс последнего ПЗ после которого выполняется ПТО до заданного времени
-        /// </summary>
-        /// <param name="device">Индекс прибора по которому будет выполняться выборка</param>
-        /// <param name="time">Крайний момент времени окончания ПТО</param>
-        /// <returns>Индекс ПЗ после которого будет выполняться последнее ПТО</returns>
-        private int GetBatchIndex(int device, int time)
-        {
-            
-            // Если установлено логирование и объект для записи существует
-            if (Form1.loggingOn)
-
-                // Записываем данные в файл
-                fstream.Write($"Вычисляем индекс последнего ПЗ для прибора {device} для момента времени {time}");
-
-            // Если список пустой
-            if (matrixTPM[device].Count == 0)
-
-                // Вернём индекс начальный индекс ПЗ
-                return -1;
-
-            // Если в списке первый элемент не удовлетворяет условию
-            // TODO: Баг, определяет пакет по окончанию ПТО, когда необходимо по началу ПТО.
-            if (matrixTPM[device][0].TimePreM > time)
-
-                // Вернём индекс начальный индекс ПЗ
-                return -1;
-
-            // Если в списке первый элемент не удовлетворяет условию
-            if (matrixTPM[device][0].TimePreM == time)
-
-                // Вернём индекс начальный индекс ПЗ
-                return matrixTPM[device][0].BatchIndex;
-
-            // Объявляем индекс
-            int index = 1;
-
-            // Для каждой ПТО выполняем обработку
-            for (; index < matrixTPM[device].Count; index++)
-            {
-
-                // Если момент окончания ПТО в позиции index не удовлетворяет условиям
-                if (matrixTPM[device][index].TimePreM > time)
-
-                    // Возвращаем индекс ПЗ после которого выполнится последнее ПТО
-                    return matrixTPM[device][index - 1].BatchIndex;
-
-                // Если момент окончания ПТО в позиции index не удовлетворяет условиям
-                if (matrixTPM[device][index].TimePreM == time)
-
-                    // Возвращаем индекс ПЗ после которого выполнится последнее ПТО
-                    return matrixTPM[device][index].BatchIndex;
-            }
-
-            // Индекс ПЗ после которог выполниться ПТО, последний в списке
-            return matrixTPM[device][index - 1].BatchIndex;
-        }
-        
-        
-        /// <summary>
-        /// Вернёт тип данных по переданному индексу ПЗ
-        /// </summary>
-        /// <param name="batchIndex">Индекс ПЗ</param>
-        /// <returns>Тип данных</returns>
-        public int GetDataTypeByBatchIndex(int batchIndex)
-        {
-            return schedule[batchIndex].Type;
-        }
-
-        /// <summary>
-        /// Возвращает матрицу ПТО приборов
-        /// </summary>
-        /// <returns>Матрица ПТО приборов</returns>
-        public List<List<int>> GetMatrixY()
-        {
-            return MatrixY.ToListList(_matrixY);
-        }
-
-        protected override void AddColumnY()
-        {
-            _matrixY.AddColumn();
-        }
-
-        protected override void AddNewPreMaintence()
-        {
-            _matrixY.SetPreMaintenceLastPacketAllDevices();
-        }
-
-        protected override bool HasPreMaintenceAfter(int device, int packet)
-        {
-            return _matrixY.PreMaintenceStatusAfter(device, packet) == 1;
-        }
-
-        protected override int PreMaintenceStatusAfter(int device, int packet)
-        {
-            return _matrixY.PreMaintenceStatusAfter(device, packet);
-        }
-
-
-        #region Unused
-
-        /// <summary>
-        /// Выполняем сдвиг для матрицы ПТО приборов
-        /// </summary>
-        //private void ShiftMatrixY()
-        //{
-
-        //    // Если логирование установлена
-        //    if (Form1.loggingOn)
-        //        fstream.Write("ShiftMatrixY start: Улучшаем позиции ПТО");
-
-        //    // Объявляем индекс прибора
-        //    int bestDevice = -1;
-
-        //    // Объявляем критерий текущего лучшего расписания
-        //    int f2;
-
-        //    // Объявляем критерий f2 для текущего расписания со сдвигом
-        //    int new_f2;
-
-        //    // Объявляем индекс ПЗ за которым следует последнее ПТО
-        //    int last_prem_batch_index;
-
-        //    // Объявляем индекс последнего ПЗ для текущего расписания
-        //    int last_batch_index;
-
-        //    // Выполняем обработку в цикле
-        //    do
-        //    {
-
-        //        // Обнуляем критерий f2 для текущего расписания
-        //        f2 = int.MaxValue;
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //        {
-        //            fstream.Write("Новая итерация сдвигов");
-
-        //            CalcStartProcessing();
-        //            CalcMatrixTPM();
-
-        //            fstream.Write("1");
-        //            fstream.WriteMatrixYAsTable(matrixY);
-        //            fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-
-        //            // INFO: Ранее f2 критерий был this.GetPreMUtility();
-        //            // INFO: Ранее f2 критерий был this.GetSigmaDowntime();
-        //            fstream.Write("f2 для текущего расписания", this.CalculateCriteria_f2());
-        //        }
-
-        //        // Для каждого прибора выполняем обработку
-        //        for (int device = 0; device < config.deviceCount; device++)
-        //        {
-
-        //            // Вычисляем матрицу моментов начала времени выполнения заданий
-        //            CalcStartProcessing();
-
-        //            // Вычисляем матрицу моментов окончания времени выполнения ПТО
-        //            CalcMatrixTPM();
-
-        //            // Определяем индекс ПЗ за которым следует последнее ПТО
-        //            last_prem_batch_index = this.GetLastPreMPos(device); // j*
-
-        //            // Определяем индекс последнего ПЗ для текущего расписания
-        //            last_batch_index = this.matrixY[device].Count() - 1; // j^max
-
-        //            // Если логирование установлено
-        //            // TODO: Добавить текст:значение
-        //            if (Form1.loggingOn)
-        //                fstream.Write($"Выполняем сдвиг для прибора: {device} j*={last_prem_batch_index}; j^max={last_batch_index}");
-
-
-        //            // Проверяем на необходимость проведения операций перестановки
-        //            if (last_prem_batch_index == last_batch_index)
-        //            {
-        //                if (IsDebug && IsDebug_ShiftMatrixY)
-        //                    fstream.Write($"Пропускаем сдвиг для прибора: {device}");
-
-        //                // Пропускаем итерацию для текущего прибора
-        //                continue;
-        //            }
-
-        //            // Выполняем сдвиг ПТО на следующую позицию
-        //            this.matrixY[device][last_prem_batch_index] = 0;
-        //            this.matrixY[device][last_prem_batch_index + 1] = 1;
-
-        //            // Вычисляем матрицу моментов начала времени выполнения заданий
-        //            this.CalcStartProcessing();
-
-        //            // Вычисляем матрицу моментов окончания времени выполнения ПТО
-        //            this.CalcMatrixTPM();
-
-        //            // Если логирование установлено
-        //            if (Form1.loggingOn)
-        //            {
-        //                fstream.Write("2");
-        //                fstream.WriteMatrixYAsTable(matrixY);
-        //                fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-        //            }
-
-        //            // Если текущее решение не удовлетворяет условию надёжности
-        //            if (!this.IsSolutionAcceptable())
-        //            {
-        //                // Если логирование установлено
-        //                if (Form1.loggingOn)
-        //                    fstream.Write("РЕШЕНИЕ НЕ ДОПУСТИМО");
-
-        //                // Выполняем обратный сдвиг ПТО
-        //                this.matrixY[device][last_prem_batch_index] = 1;
-        //                this.matrixY[device][last_prem_batch_index + 1] = 0;
-
-        //                // Пропускаем итерацию
-        //                continue;
-        //            }
-
-        //            // Вычисляем критерий f2 для текущего расписания со сдвигом
-        //            // INFO: Ранее f2 критерий был this.GetPreMUtility();
-        //            // INFO: Ранее f2 критерий был this.GetSigmaDowntime();
-        //            new_f2 = this.CalculateCriteria_f2();
-
-        //            // Если логирование установлено
-        //            if (Form1.loggingOn)
-        //                fstream.Write($"РЕШЕНИЕ ДОПУСТИМО. G(f2)={f2};new_f2={new_f2}");
-
-        //            // Если текущее расписания лучше предыдущего
-        //            if (new_f2 < f2)
-        //            {
-
-        //                // Запоминаем новый лучший критерий f2
-        //                f2 = new_f2;
-
-        //                // Переопределяем индекс прибора
-        //                bestDevice = device;
-        //            }
-
-        //            // Выполняем обратный сдвиг ПТО
-        //            this.matrixY[device][last_prem_batch_index] = 1;
-        //            this.matrixY[device][last_prem_batch_index + 1] = 0;
-        //        }
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //            fstream.Write("f2", f2);
-
-        //        // Если улучшений позиций ПТО не было найдено
-        //        if (f2 == int.MaxValue)
-        //        {
-        //            // Если логирование установлено
-        //            if (Form1.loggingOn)
-        //                fstream.Write("Улучшений не было найдено");
-
-        //            // Прекращаем обработку
-        //            break;
-        //        }
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //            fstream.Write("Было найдено улучшение");
-
-        //        // Определяем индекс ПЗ за которым следует последнее ПТО
-        //        last_prem_batch_index = this.GetLastPreMPos(bestDevice); // j*
-
-        //        // Выполняем их переопределение
-        //        this.matrixY[bestDevice][last_prem_batch_index] = 0;
-        //        this.matrixY[bestDevice][last_prem_batch_index + 1] = 1;
-
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //        {
-        //            fstream.Write("Новое решение:");
-        //            fstream.Write("3");
-        //            fstream.WriteMatrixYAsTable(matrixY);
-        //            fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-        //        }
-
-        //        // Продолжаем улучшения
-        //    } while (true);
-
-        //    // Если логирование установлено
-        //    if (Form1.loggingOn)
-        //    {
-        //        fstream.Write("Было найдено решение с помощью сдвигов.");
-        //        fstream.Write("Выполняется заполнение позиций ПТО не найденных с помощью сдвигов.");
-        //    }
-
-        //    // Для каждого прибора выполняем дополнение для матрицы ПТО 1
-        //    for (int device = 0; device < this.config.deviceCount; device++)
-        //    {
-        //        // Если логирование установлено
-        //        if (Form1.loggingOn)
-        //        {
-        //            fstream.Write("Для прибора", device);
-        //        }
-
-        //        // Определяем индекс ПЗ за которым следует последнее ПТО
-        //        last_prem_batch_index = this.GetLastPreMPos(device); // j*
-
-        //        // Определяем индекс последнего ПЗ для текущего расписания
-        //        last_batch_index = this.matrixY[device].Count() - 1; // j^max
-
-        //        // Если матрица Y не оканчивается 1
-        //        if (last_prem_batch_index < last_batch_index)
-        //        {
-
-        //            // Если логирование установлено
-        //            if (Form1.loggingOn)
-        //                fstream.Write("ПТО добавляется");
-
-        //            // Изменяем индекс последнего ПТО нп 1
-        //            this.matrixY[device][last_batch_index] = 1;
-        //        }
-
-        //        // Если логирование установлено
-        //        else if (Form1.loggingOn)
-        //            fstream.Write("ПТО не добавляется");
-        //    }
-
-        //    // Если логирование установлено
-        //    if (Form1.loggingOn)
-        //    {
-        //        fstream.WriteProcessingAsTable(startProcessing, matrixY, schedule, config);
-        //        fstream.WriteMatrixYAsTable(matrixY);
-        //        fstream.Write("ShiftMatrixY stop");
-        //    }
-        //}
-
-        // ВЫРАЖЕНИЕ 15
-        /// <summary>
-        /// Возвращает результат совпадения количества заданий
-        /// </summary>
-        /// <param name="matrixA">Матрица количества заданий каждого типа на пакет[dataTypesCount x mi]</param>
-        /// <returns>Если количество заданий совпадают - true, иначе false</returns>
-        //private bool IsConstraint_JobCount(List<List<int>> matrixA)
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Проверяем ограничение 15");
-
-        //    // Объявляем количество заданий для текущего расписания
-        //    int cur_jobCount = 0;
-
-        //    // Объявляем необходимое количество заданий 
-        //    int tar_jobCount = 0;
-
-        //    // Для каждого пакета подсчитываем количество заданий
-        //    for (int batch = 0; batch < this.schedule.Count; batch++)
-
-        //        // Увеличиваем количество заданий в текущем расписании
-        //        cur_jobCount += this.schedule[batch].Size;
-
-        //    // Выполняем обход по типам
-        //    for (int dataType = 0; dataType < matrixA.Count; dataType++)
-
-
-        //        // Выполняем обход по пакетам
-        //        for (int batch = 0; batch < matrixA[dataType].Count; batch++)
-
-        //            // Увеличиваем количество необходимых заданий
-        //            tar_jobCount += matrixA[dataType][batch];
-
-        //    // Возвращаем результат сравнения
-        //    return (cur_jobCount == tar_jobCount);
-        //}
-
-        ///// <summary>
-        ///// Возвращает результат совпадения количества пакетов заданий
-        ///// </summary>
-        ///// <param name="matrixA">Матрица количества заданий каждого типа на пакет[dataTypesCount x mi]</param>
-        ///// <returns>Если количество пакетов заданий совпадают - true, иначе false</returns>
-        //private bool IsConstraint_BatchCount(List<List<int>> matrixA)
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Проверяем ограничение 21");
-
-        //    // Объявляем количество пакетов заданий
-        //    int cur_batchCount = this.schedule.Count;
-
-        //    // Объявляем необходимое количество пакетов заданий 
-        //    int tar_batchCount = 0;
-
-        //    // Выполняем обход по типам
-        //    for (int dataType = 0; dataType < matrixA.Count; dataType++)
-
-        //        // Увеличиваем количество пакетов
-        //        tar_batchCount += matrixA[dataType].Count;
-
-        //    // Возвращаем true
-        //    return (cur_batchCount == tar_batchCount);
-        //}
-
-        //// ВЫРАЖЕНИЕ 24
-        ///// <summary>
-        ///// Возвращаем результат совпадения одного пакета на позицию расписания
-        ///// </summary>
-        ///// <returns>Если пакет на позицию 1, то true. Иначе false</returns>
-        //private bool IsConstraint_OneBatchOnPos()
-        //{
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write($"Проверяем ограничение 24");
-
-        //    // Существующая реализация расписания обязывает иметь один пакет на позицию
-        //    return true;
-        //}
-
-        //// ВЫРАЖЕНИЕ 25
-        ///// <summary>
-        ///// Возвращает результат совпадения количества пакетов заданий каждого типа
-        ///// </summary>
-        ///// <param name="matrixA">Матрица количества заданий каждого типа на пакет[dataTypesCount x mi]</param>
-        ///// <returns>Если количество пакетов заданий по типам совпадают - true, иначе false</returns>
-        //private bool IsConstraint_BatchCountByType(List<List<int>> matrixA)
-        //{
-
-        //    // Если установлено логирование и объект для записи существует
-        //    if (Form1.loggingOn)
-
-        //        // Записываем данные в файл
-        //        fstream.Write("Проверяем ограничение 25");
-
-        //    // Объявляем количество пакетов заданий
-        //    int cur_batchCountByType;
-
-        //    // Объявляем необходимое количество пакетов заданий 
-        //    int tar_batchCountByType;
-
-        //    // Выполняем обход по типам
-        //    for (int dataType = 0; dataType < matrixA.Count; dataType++)
-        //    {
-
-        //        // Увеличиваем количество пакетов
-        //        tar_batchCountByType = matrixA[dataType].Count;
-
-        //        // Обнуляем значение количества пакето заданий заданного типа
-        //        cur_batchCountByType = 0;
-
-        //        // Для каждого пакета заданий выполняем обработку
-        //        for (int batch = 0; batch < this.schedule.Count; batch++)
-
-        //            // Увеличиваем количество пакетов заданий текущего типа
-        //            cur_batchCountByType += (this.schedule[batch].Type == dataType) ? 1 : 0;
-
-        //        // Выполяем проверку
-        //        if (tar_batchCountByType != cur_batchCountByType)
-
-        //            // Возвращаем false
-        //            return false;
-        //    }
-
-        //    // Возвращаем true
-        //    return true;
-        //}
-
-        #endregion
     }
 }
