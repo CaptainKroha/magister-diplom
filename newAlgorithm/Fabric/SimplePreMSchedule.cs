@@ -302,19 +302,6 @@ namespace magisterDiplom.Fabric
         /// </summary>
         protected MatrixY _matrixY;
 
-        public SimplePreMSchedule(PreMConfiguration configuration) : base(configuration)
-        {
-            //SetLogFile("tmp.json");
-
-            //// Если флаг оталдки установлен
-            //if (IsDebug)
-            //{
-
-            //    // Выводим информацию о переданной конфигурационной структуре
-            //    fstream.Write($"{config.ToString()}");
-            //}
-        }
-
         /// <summary>
         /// Поток записи в файл
         /// </summary>
@@ -342,6 +329,13 @@ namespace magisterDiplom.Fabric
         //        fstream.FinalizeFile();
         //    fstream = null;
         //}
+
+        #region Программный интерфейс
+
+        public SimplePreMSchedule(PreMConfiguration configuration) : base(configuration)
+        {
+            //SetLogFile("tmp.json");
+        }
 
         public override void Update(int batchesCount)
         {
@@ -381,6 +375,15 @@ namespace magisterDiplom.Fabric
             return new SimplePreMaintenceSecondLevelOutput(this);
         }
 
+        #endregion
+
+        #region Служебные переопределенные процедуры
+
+        protected override int F2_criteria()
+        {
+            return TotalPreMaintenceDuration() + TotalInactionDuration();
+        }
+
         protected override void AddColumnY()
         {
             _matrixY.AddColumn();
@@ -395,11 +398,35 @@ namespace magisterDiplom.Fabric
         {
             return _matrixY.PreMaintenceStatusAfter(device, packet) == 1;
         }
-
-        protected override int PreMaintenceStatusAfter(int device, int packet)
+        
+        protected override int PreMaintanceDurationAfter(int device, int packet)
         {
-            return _matrixY.PreMaintenceStatusAfter(device, packet);
+            return _matrixY.PreMaintenceStatusAfter(device, packet) * config.preMaintenanceTimes[device];
         }
+
+        #endregion
+
+        #region Служебные методы
+        protected int TotalPreMaintenceDuration()
+        {
+            var result = 0;
+            for (int device = 0; device < config.deviceCount; device++)
+                for (int batch = 0; batch < ScheduleSize(); batch++)
+                    result += PreMaintanceDurationAfter(device, batch);
+            return result;
+        }
+
+        protected int TotalInactionDuration()
+        {
+            var result = 0;
+            for (int device = 0; device < config.deviceCount; device++)
+            {
+                result += DeviceInactionDuration(device);
+            }
+            return result;
+        }
+
+        #endregion
 
     }
 }

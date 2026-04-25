@@ -74,12 +74,12 @@ namespace magisterDiplom.Model
 
         public int PreMaintenceStatusAfter(int packet)
         {
-            int result = 0;
+            int result = -1;
             for (int i = 0; i < _rows; i++)
             {
                 if (_data[i][packet] == 1)
                 {
-                    result = 1;
+                    result = i;
                     break;
                 }
             }

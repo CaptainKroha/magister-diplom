@@ -33,8 +33,10 @@ namespace magisterDiplom.Fabric
                     for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
                         Tpm_Matrix[device].Add(0);
 
-                    for (int batch = 0; batch < schedule.matrixTPM[device].Count; batch++)
-                        Tpm_Matrix[device][schedule.matrixTPM[device][batch].BatchIndex] = schedule.matrixTPM[device][batch].TimePreM;
+                    foreach(var preMSet in schedule.matrixTPM[device])
+                    {
+                        Tpm_Matrix[device][preMSet.BatchIndex] = preMSet.TimePreM;
+                    }
                 }
             }
 
@@ -54,46 +56,6 @@ namespace magisterDiplom.Fabric
         /// Матрица моментов времени окончания ПТО приборов
         /// </summary>
         protected List<List<PreMSet>> matrixTPM = new List<List<PreMSet>>();
-
-        /// <summary>
-        /// Выполняет построение матрицы моментов окончания времени выполнения ПТО.
-        protected void CalcMatrixTPM()
-        {
-
-            // Если установлено логирование и объект для записи существует
-            //if (Form1.loggingOn)
-
-            //    // Записываем данные в файл
-            //    fstream.Write("Вычисляем матрицу T^pm;");
-
-            matrixTPM?.Clear();
-
-            for (int device = 0; device < config.deviceCount; device++)
-            {
-
-                // Инициализируем ПТО для прибора
-                matrixTPM.Add(new List<PreMSet>());
-
-                for (int batch = 0; batch < ScheduleSize(); batch++)
-
-                    // Если для текущей позиции есть ПТО
-                    if (HasPreMaintenceAfter(device, batch))
-
-                        // Момент окончания времени выполнения ПТО на позиции batchIndex
-                        matrixTPM[device].Add(
-                            new PreMSet(
-                                batch,
-                                PreMaintenceCompletionTimeAfter(device, batch)
-                            )
-                        );
-            }
-        }
-
-        protected override void Calculate()
-        {
-            base.Calculate();
-            CalcMatrixTPM();
-        }
 
         public override void Add(int dataType, int size)
         {
@@ -142,6 +104,44 @@ namespace magisterDiplom.Fabric
             return new PreMaintenceSecondLevelOutput(this);
         }
 
+        #region Служебные методы
+
+        #region Служебные методы переопределяемые в наследниках
+
+        protected abstract void AddColumnY();
+
+        protected abstract void AddPreMaintenceAfterLastBatch();
+
+        protected abstract bool HasPreMaintenceAfter(int device, int packet);
+
+        protected abstract int PreMaintanceDurationAfter(int device, int packet);
+
+        #endregion
+
+        protected void CalcMatrixTPM()
+        {
+            matrixTPM?.Clear();
+
+            for (int device = 0; device < config.deviceCount; device++)
+            {
+                matrixTPM.Add(new List<PreMSet>());
+                for (int batch = 0; batch < ScheduleSize(); batch++)
+                {
+                    if (!HasPreMaintenceAfter(device, batch))
+                    {
+                        continue;
+                    }
+                    matrixTPM[device].Add(new PreMSet(batch, PreMaintenceCompletionTimeAfter(device, batch)));
+                }
+            }
+        }
+
+        protected override void Calculate()
+        {
+            base.Calculate();
+            CalcMatrixTPM();
+        }
+
         protected override void CalcStartProcessing()
         {
 
@@ -163,34 +163,15 @@ namespace magisterDiplom.Fabric
             }
         }
 
-        protected override int F2_criteria()
-        {
-            return PreMaintenceDuration() + TotalInactionDuration();
-        }
-
         protected double SystemReliabilityBy(int time)
         {
             double result = 1;
-            for(int device = 0; device < config.deviceCount - 1; device++)
+            for (int device = 0; device < config.deviceCount - 1; device++)
             {
                 result *= DeviceReliabilityBy(device, time);
             }
             return result;
         }
-
-        #region Для переопределения
-
-        protected abstract void AddColumnY();
-
-        protected abstract void AddPreMaintenceAfterLastBatch();
-
-        protected abstract bool HasPreMaintenceAfter(int device, int packet);
-
-        protected abstract int PreMaintenceStatusAfter(int device, int packet);
-
-        #endregion
-
-        #region Служебные методы
 
         private void CalcStartProcessingFirstDevice()
         {
@@ -224,7 +205,8 @@ namespace magisterDiplom.Fabric
                     config.changeoverTime[device][schedule[batch - 1].Type, schedule[batch].Type] +
 
                     // Время выполнения ПТО после предыдущего ПЗ
-                    PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[0];
+                    PreMaintanceDurationAfter(device, batch -  1); ;
+                    //PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[0];
 
                 for (job = 1; job < schedule[batch].Size; job++)
                 { 
@@ -282,7 +264,8 @@ namespace magisterDiplom.Fabric
                     config.changeoverTime[device][schedule[batch - 1].Type, schedule[batch].Type] +
 
                     // Время выполнения ПТО
-                    PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[device],
+                    PreMaintanceDurationAfter(device, batch - 1),
+                    //PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[device],
 
                     // Момент начала времени выполнения 1 задания на предыдущем приборе
                     startProcessing[device - 1][batch][job] +
@@ -301,25 +284,6 @@ namespace magisterDiplom.Fabric
                         JobCompletionTime(device - 1, batch, job)
                     );
             }
-        }
-
-        protected int PreMaintenceDuration()
-        {
-            var result = 0;
-            for (int device = 0; device < config.deviceCount; device++)
-                for (int batch = 0; batch < ScheduleSize(); batch++)
-                    result += PreMaintenceStatusAfter(device, batch) * config.preMaintenanceTimes[device];
-            return result;
-        }
-
-        protected int TotalInactionDuration()
-        {
-            var result = 0;
-            for (int device = 0; device < config.deviceCount; device++)
-            {
-                result += DeviceInactionDuration(device);
-            }
-            return result;
         }
 
         protected int DeviceInactionDuration(int device)
@@ -343,8 +307,7 @@ namespace magisterDiplom.Fabric
 
             for (int batch = 1; batch < ScheduleSize(); ++batch)
             {
-                result += startProcessing[device][batch].First()
-                    - (startProcessing[device][batch - 1].Last() + config.proccessingTime[device, schedule[batch - 1].Type]);
+                result += startProcessing[device][batch].First() - CompletionTimeLastJobOfBatch(device, batch - 1);
             }
 
             return result;
@@ -356,8 +319,7 @@ namespace magisterDiplom.Fabric
 
             for (int job = 1; job < schedule[batch].Size; ++job)
             {
-                result += startProcessing[device][batch][job]
-                    - (startProcessing[device][batch][job - 1] + config.proccessingTime[device, schedule[batch].Type]);
+                result += startProcessing[device][batch][job] - JobCompletionTime(device, batch, job - 1);
             }
 
             return result;
@@ -419,14 +381,12 @@ namespace magisterDiplom.Fabric
 
         protected int PreMaintenceCompletionTimeAfter(int device, int batch)
         {
-            // Момент начала времени выполнения последнего задания в пакете batchIndex на приборе device
-            return startProcessing[device][batch].Last() +
+            return CompletionTimeLastJobOfBatch(device, batch) + PreMaintanceDurationAfter(device, batch);
+        }
 
-                // Время выполнения задания с типов пакета на позиции batchIndex
-                config.proccessingTime[device, schedule[batch].Type] +
-
-                // Время выполнения ПТО
-                config.preMaintenanceTimes[device];
+        protected int CompletionTimeLastJobOfBatch(int device, int batch)
+        {
+            return JobCompletionTime(device, batch, BatchSize(batch) - 1);
         }
 
         protected int JobCompletionTime(int device, int batch, int job)
