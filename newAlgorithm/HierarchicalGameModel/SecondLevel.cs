@@ -24,12 +24,25 @@ namespace magisterDiplom.HierarchicalGameModel
             return new SecondLevel(schedule);
         }
 
+        public static SecondLevel CreateForTypedPreMaintence(TypedPreMConfiguration configuration)
+        {
+            var schedule = new TypedPreMShedule(configuration);
+            return new SecondLevel(schedule);
+        }
+
         public int Makespan
         {
             get {
                 return schedule.MakeSpan;
             }
             
+        }
+
+        public int F2_Criteria
+        {
+            get {
+                return schedule.F2_criteria(); 
+            }
         }
 
         public bool Build(List<int> m, List<List<int>> A_matrix)

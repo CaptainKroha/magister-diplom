@@ -74,7 +74,7 @@ namespace magisterDiplom
 
         protected abstract void CalcStartProcessing();
 
-        protected abstract int F2_criteria();
+        public abstract int F2_criteria();
 
         public abstract void Add(int dataType, int size);
 

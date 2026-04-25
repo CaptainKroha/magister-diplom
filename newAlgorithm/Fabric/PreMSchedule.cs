@@ -107,8 +107,14 @@ namespace magisterDiplom.Fabric
         public override void Add(int dataType, int size)
         {
             schedule.Add(new Batch(dataType, size));
+
             AddColumnY();
-            OptimizeLocaly(5);
+
+            if(ScheduleSize() > 1)
+            {
+                OptimizeLocaly(5);
+            }
+            
             if (schedule.Capacity != ScheduleSize())
             {
                 AddPreMaintenceAfterLastBatch();
@@ -161,7 +167,7 @@ namespace magisterDiplom.Fabric
             }
         }
 
-        protected override int F2_criteria()
+        public override int F2_criteria()
         {
             return PreMaintenceDuration() + TotalInactionDuration();
         }
