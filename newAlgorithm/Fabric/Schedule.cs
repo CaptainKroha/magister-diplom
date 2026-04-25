@@ -14,12 +14,6 @@ namespace magisterDiplom
     {
 
         /// <summary>
-        /// Флаг отладки. Если установлен, то в процессе выполнения
-        /// будет выводиться отладочная информация в стандартный поток вывода
-        /// </summary>
-        protected const bool IsDebug = true;
-
-        /// <summary>
         /// Конфигурационная структура содержащая информацию о конвейерной системе
         /// </summary>
         private protected Configuration config;
@@ -42,9 +36,9 @@ namespace magisterDiplom
         public Matrix R_matrix
         { 
             get {
-                var res = new Matrix(config.dataTypesCount, schedule.Count);
-                for (int batchIndex = 0; batchIndex < schedule.Count; batchIndex++)
-                    res[schedule[batchIndex].Type, batchIndex] = schedule[batchIndex].Size;
+                var res = new Matrix(config.dataTypesCount, ScheduleSize());
+                for (int batch = 0; batch < ScheduleSize(); batch++)
+                    res[schedule[batch].Type, batch] = schedule[batch].Size;
                 return res;
             } 
         }
@@ -52,9 +46,9 @@ namespace magisterDiplom
         public Matrix P_matrix
         {
             get {
-                var res = new Matrix(config.dataTypesCount, schedule.Count);
-                for (int batchIndex = 0; batchIndex < schedule.Count; batchIndex++)
-                    res[schedule[batchIndex].Type, batchIndex] = 1;
+                var res = new Matrix(config.dataTypesCount, ScheduleSize());
+                for (int batch = 0; batch < ScheduleSize(); batch++)
+                    res[schedule[batch].Type, batch] = 1;
                 return res;
             }
 
@@ -78,38 +72,9 @@ namespace magisterDiplom
             return startProcessing;
         }
 
-        // ВЫРАЖЕНИЯ 1-6
-        /// <summary>
-        /// Выполняет построение матрицы начала времени выполнения заданий
-        /// </summary>
         protected abstract void CalcStartProcessing();
 
-        /// <summary>
-        /// Возвращает матрицу количества заданий в пакетах
-        /// </summary>
-        /// <returns>Матрица количества заданий в пакетах</returns>
-        public List<List<int>> GetMatrixR()
-        {
-            return Matrix.ToListList(R_matrix);   
-        }
-
-        /// <summary>
-        /// Возвращает матрицу порядка пакетов заданий
-        /// </summary>
-        /// <returns>Матрица порядка пакетов заданий</returns>
-        public List<List<int>> GetMatrixP()
-        {
-            return Matrix.ToListList(P_matrix);
-        }
-
-        /// <summary>
-        /// Возвращает критерий оптимизации makespan, определяющий время выполнения всех заданий в конвейерной системе
-        /// </summary>
-        /// <returns>Makespan - время выполнения всех заданий в системе</returns>
-        public int GetMakespan()
-        {
-            return MakeSpan;
-        }
+        protected abstract int F2_criteria();
 
         public abstract void Add(int dataType, int size);
 
@@ -142,5 +107,91 @@ namespace magisterDiplom
 
             return dataTypes;
         }
+
+        protected virtual void Calculate()
+        {
+            CalcStartProcessing();
+        }
+
+        /// <summary>
+        /// Данная функция выполняет локальную оптимизацию составов ПЗ
+        /// </summary>
+        /// <param name="swapCount">Количество перестановок</param>
+        /// <returns>true, если была найдено перестановка удовлетворяющая условию надёжности. Иначе false</returns>
+        protected bool OptimizeLocaly(int swapCount = 999999)
+        {
+
+            List<Batch> bestSchedule = new List<Batch>(schedule);
+
+            Calculate();
+            int bestValue = F2_criteria();
+
+            for (int batch = ScheduleSize() - 1; batch > 0 && swapCount > 0; batch--, swapCount--)
+            {
+
+                // Выполняем перестановку
+                (schedule[batch - 1], schedule[batch]) = (schedule[batch], schedule[batch - 1]);
+
+                Calculate();
+                int newValue = F2_criteria();
+
+                if (newValue < bestValue)
+                {
+                    // Переопределяем лучшее расписание
+                    bestSchedule = new List<Batch>(schedule);
+                    bestValue = newValue;
+                }
+            }
+
+            schedule = bestSchedule;
+            return true;
+        }
+
+        protected int ScheduleSize()
+        {
+            return schedule.Count;
+        }
+
+        protected int BatchType(int batch)
+        {
+            return schedule[batch].Type;
+        }
+
+        protected int BatchSize(int batch)
+        {
+            return schedule[batch].Size;
+        }
+
+        #region Старый интерфейс
+
+        /// <summary>
+        /// Возвращает матрицу количества заданий в пакетах
+        /// </summary>
+        /// <returns>Матрица количества заданий в пакетах</returns>
+        public List<List<int>> GetMatrixR()
+        {
+            return Matrix.ToListList(R_matrix);
+        }
+
+        /// <summary>
+        /// Возвращает матрицу порядка пакетов заданий
+        /// </summary>
+        /// <returns>Матрица порядка пакетов заданий</returns>
+        public List<List<int>> GetMatrixP()
+        {
+            return Matrix.ToListList(P_matrix);
+        }
+
+        /// <summary>
+        /// Возвращает критерий оптимизации makespan, определяющий время выполнения всех заданий в конвейерной системе
+        /// </summary>
+        /// <returns>Makespan - время выполнения всех заданий в системе</returns>
+        public int GetMakespan()
+        {
+            return MakeSpan;
+        }
+
+        #endregion
+
     }
 }
