@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace magisterDiplom.Model.Configuration
 {
-    internal class Configuration
+    public class Configuration
     {
         /// <summary>
         /// Данная переменная устанавливаем режим отладки для всей программы
@@ -39,7 +39,7 @@ namespace magisterDiplom.Model.Configuration
         /// Для каждого прибора есть матрица переналадки приборов с одного типа задания на другой.
         /// Таким образом changeoverTime = [deviceCount] : [dataTypesCount x dataTypesCount]
         /// </summary>
-        public readonly Dictionary<int, Matrix> changeoverTime;
+        public readonly Dictionary<int, Matrix> changeoverTime = new Dictionary<int, Matrix>();
 
         /// <summary>
         /// Данная переменная представляет из себя двухмерную матрицу и используется, как матрица времени выполнения заданий.
@@ -52,6 +52,19 @@ namespace magisterDiplom.Model.Configuration
         /// Конструктор по умолчанию
         /// </summary>
         public Configuration() { }
+
+        public Configuration(Config config)
+        {
+            dataTypesCount = config.dataTypesCount;
+            deviceCount = config.deviceCount;
+            batchCount = config.batchCount;
+            proccessingTime = new Matrix(config.proccessingTime);
+            for (int i = 0; i < deviceCount; ++i)
+            {
+                changeoverTime.Add(i, new Matrix(config.changeoverTime[i]));
+            }
+            isFixedBatches = config.isFixedBatches;
+        }
 
         /// <summary>
         /// Конструктор конфигурационного класса
@@ -149,9 +162,9 @@ namespace magisterDiplom.Model.Configuration
             this.dataTypesCount = dataTypesCount;
             this.deviceCount = deviceCount;
             this.proccessingTime = new Matrix(proccessingTime);
-            for(int i = 1; i <= deviceCount; ++i)
+            for(int i = 0; i < deviceCount; ++i)
             {
-                this.changeoverTime[i] = new Matrix(changeoverTime[i]);
+                this.changeoverTime.Add(i, new Matrix(changeoverTime[i]));
             }
             
             this.isFixedBatches = isFixedBatches;
