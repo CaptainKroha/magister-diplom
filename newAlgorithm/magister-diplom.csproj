@@ -89,12 +89,15 @@
     <Compile Include="Fabric\Builders\SimplePreMScheduleBuilder.cs" />
     <Compile Include="Fabric\PreMSchedule.cs" />
     <Compile Include="Fabric\SimplePreMSchedule.cs" />
+    <Compile Include="Fabric\TypedPreMShedule.cs" />
     <Compile Include="FirstLevel.cs" />
+    <Compile Include="HierarchicalGameModel\SecondLevel.cs" />
     <Compile Include="Model\Batch.cs" />
     <Compile Include="Model\Config.cs" />
     <Compile Include="Model\Configuration\Configuration.cs" />
     <Compile Include="Model\Configuration\PreMConfiguration.cs" />
     <Compile Include="Model\Configuration\TypedPreMConfiguration.cs" />
+    <Compile Include="Model\MatrixY.cs" />
     <Compile Include="Model\PreMInfo.cs" />
     <Compile Include="Model\PreMSet.cs" />
     <Compile Include="Model\Vector.cs" />
@@ -158,7 +161,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="HierarchicalGameModel\MathModels\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

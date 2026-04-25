@@ -1,13 +1,20 @@
-﻿using System;
+﻿using newAlgorithm.Model;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace magisterDiplom.Model.Configuration
 {
-    internal class TypedPreMConfiguration : PreMConfiguration
+    public class TypedPreMConfiguration : PreMConfiguration
     {
+        public int PreMaintenceTypesCount {  get; set; }
+
+        public List<int> InactionCosts { get; set; }
+
+        public Matrix PreMaintenanceCosts { get; set; }
+
+        public Matrix PreMaintenanceTimes { get; set; }
+
+        public TypedPreMConfiguration() { }
+
 
     }
 }
