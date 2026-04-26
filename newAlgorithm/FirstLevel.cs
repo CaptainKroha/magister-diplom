@@ -78,7 +78,7 @@ namespace newAlgorithm
         /// <summary>
         /// Номер состава пакетов
         /// </summary>
-        private int compositionNumber;
+        private int compositionNumber = 1;
 
         /// <summary>
         /// Строка с именем файла для логирования
