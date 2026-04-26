@@ -91,7 +91,7 @@ namespace magisterDiplom.Fabric
         protected override int PreMaintanceDurationAfter(int device, int packet)
         {
             int preMaintenceType = Y_l[device].PreMaintenceStatusAfter(packet);
-            if(preMaintenceType == 0)
+            if(preMaintenceType == -1)
             {
                 return 0;
             }
