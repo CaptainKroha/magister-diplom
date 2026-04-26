@@ -42,16 +42,22 @@ namespace magisterDiplom
                 {
                     P_Matrix.Add(new List<int>(schedule.ScheduleSize()));
                     for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
-                        P_Matrix[schedule.BatchType(batch)][batch] = 1;
+                        P_Matrix[dataType].Add(0);
                 }
+
+                for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
+                    P_Matrix[schedule.BatchType(batch)][batch] = 1;
 
                 R_Matrix = new List<List<int>>(schedule.config.dataTypesCount);
                 for (int dataType = 0; dataType < schedule.config.dataTypesCount; ++dataType)
                 {
                     R_Matrix.Add(new List<int>(schedule.ScheduleSize()));
                     for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
-                        R_Matrix[schedule.BatchType(batch)][batch] = schedule.BatchSize(batch);
+                        R_Matrix[dataType].Add(0);
                 }
+
+                for (int batch = 0; batch < schedule.ScheduleSize(); batch++)
+                    R_Matrix[schedule.BatchType(batch)][batch] = schedule.BatchSize(batch);
             }
 
             public int BatchType(int batch)
