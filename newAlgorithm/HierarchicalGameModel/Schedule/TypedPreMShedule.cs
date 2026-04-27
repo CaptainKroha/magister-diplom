@@ -96,7 +96,7 @@ namespace magisterDiplom.Fabric
                 return 0;
             }
 
-            return config.PreMaintenanceTimes[device, preMaintenceType];
+            return config.PreMaintenanceDurations[device, preMaintenceType];
         }
 
         #endregion
