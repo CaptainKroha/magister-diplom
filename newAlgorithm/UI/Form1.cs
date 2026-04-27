@@ -1715,6 +1715,40 @@ namespace newAlgorithm
             return failureRates;
         }
 
+
+        private void SetPreMaintenceDurations(List<List<int>> data)
+        {
+            dataGridView_preMDuration.Rows.Clear();
+            dataGridView_preMDuration.Columns.Clear();
+
+            dataGridView_preMDuration.RowCount = data.Count;
+            dataGridView_preMDuration.ColumnCount = data[0].Count;
+
+            for(int device = 0; device < data.Count; device++)
+            {
+                dataGridView_preMDuration.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+                for(int preMType = 0; preMType < data[0].Count; preMType++)
+                {
+                    dataGridView_preMDuration.Columns[preMType].HeaderCell.Value = $"Тип ПТО {preMType + 1}";
+                    dataGridView_preMDuration.Rows[device].Cells[preMType].Value = data[device][preMType];
+                }
+            }
+        }
+
+        private List<List<int>> GetPreMaintenceDurations()
+        {
+            var result = new List<List<int>>(dataGridView_preMDuration.RowCount);
+            for (int device = 0; device < dataGridView_preMDuration.RowCount; device++)
+            {
+                result.Add(new List<int>(dataGridView_preMDuration.ColumnCount));
+                for(int preMType = 0; preMType < dataGridView_preMDuration.ColumnCount; preMType++)
+                {
+                    result[device].Add(Convert.ToInt32(dataGridView_preMDuration.Rows[device].Cells[preMType].Value));
+                }
+            }
+            return result;
+        }
+
         /// <summary>
         /// Импортируем данные из конфигурационной структуры
         /// </summary>
@@ -1988,5 +2022,6 @@ namespace newAlgorithm
             // Выполняем генерацию данных для всех типов вторым алгоритмом
             firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
         }
+
     }
 }
