@@ -705,6 +705,35 @@ namespace newAlgorithm
             TablesRebuild();
         }
 
+        /// <summary>
+        /// Данная функция обрабатываем копирования данных в таблицы dataGridView_changeover_time с первого устройства на все остальные
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CopyPreprocessingTime_Click(object sender, EventArgs e)
+        {
+
+            // Объявляем и инициализируем количество типов данных
+            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
+
+            // Объявляем и инициализируем количество приборов
+            int Device = Convert.ToInt32(numeric_device_count.Value);
+
+            // Для всех строк после первого устройства выполняем обработку
+            for (int rowIndex = DataType; rowIndex < DataType * Device; rowIndex++)
+            {
+
+                // Определяем обрабатываемую строку
+                var row = dataGridView_changeover_time.Rows[rowIndex];
+
+                // Для всех столбцов выполняем выполняем обработку
+                for (int columnIndex = 0; columnIndex < row.Cells.Count; columnIndex++)
+
+                    // Определяем новое значение в ячейке, как скопированное с первого устройства
+                    dataGridView_changeover_time.Rows[rowIndex].Cells[columnIndex].Value = dataGridView_changeover_time.Rows[rowIndex % DataType].Cells[columnIndex].Value;
+            }
+        }
+
         private void maintenceDurationSetButton_Click(object sender, EventArgs e)
         {
             int preMaintenceDuration = (int)preMaintenceDurationSetValue.Value;
@@ -878,52 +907,7 @@ namespace newAlgorithm
         private void getTypedPreMSolutionBtn_Click(object sender, EventArgs e)
         {
             var firstLevel = new FirstLevel(GetConfig(), CreateBatchCountList());
-            var config = TypedPreMConfiguration();
-            //TODO: вызов метода firstLevel для построения расписания с типами ПТО
-        }
-
-        #endregion
-
-        #region Выбор способа обработки данных
-
-        /// <summary>
-        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.TournamentSelection (Турнирная селекция)
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void RadioButton_TournamentSelection_change(object sender, EventArgs e)
-        {
-            selectoinType = SelectoinType.TournamentSelection;
-        }
-
-        /// <summary>
-        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.RouletteMethod (Метод рулетки)
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void RadioButton_RouletteMethod_change(object sender, EventArgs e)
-        {
-            selectoinType = SelectoinType.RouletteMethod;
-        }
-
-        /// <summary>
-        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.UniformRanking (Равномерное ранжирование)
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void RadioButton_UniformRanking_change(object sender, EventArgs e)
-        {
-            selectoinType = SelectoinType.UniformRanking;
-        }
-
-        /// <summary>
-        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.SigmaClipping (Сигма отсечение)
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void RadioButton_SigmaClipping_change(object sender, EventArgs e)
-        {
-            selectoinType = SelectoinType.SigmaClipping;
+            firstLevel.GenetateSolutionWithTypedPremaintenance("TypedPreM", TypedPreMConfiguration());
         }
 
         #endregion
@@ -1112,39 +1096,54 @@ namespace newAlgorithm
             // Устанавливаем значение таблицы длительностей ПТО
             SetFailureRates(failureRates);
         }
-        
+
         #endregion
 
-        #region Определяем входные параметры
+        #region Обработчики изменения значений полей
+
+        #region Выбор способа обработки данных
 
         /// <summary>
-        /// Данная функция обрабатываем копирования данных в таблицы dataGridView_changeover_time с первого устройства на все остальные
+        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.TournamentSelection (Турнирная селекция)
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void CopyPreprocessingTime_Click(object sender, EventArgs e)
+        private void RadioButton_TournamentSelection_change(object sender, EventArgs e)
         {
-
-            // Объявляем и инициализируем количество типов данных
-            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
-
-            // Объявляем и инициализируем количество приборов
-            int Device = Convert.ToInt32(numeric_device_count.Value);
-
-            // Для всех строк после первого устройства выполняем обработку
-            for (int rowIndex = DataType; rowIndex < DataType * Device; rowIndex++)
-            {
-
-                // Определяем обрабатываемую строку
-                var row = dataGridView_changeover_time.Rows[rowIndex];
-
-                // Для всех столбцов выполняем выполняем обработку
-                for (int columnIndex = 0; columnIndex < row.Cells.Count; columnIndex++)
-
-                    // Определяем новое значение в ячейке, как скопированное с первого устройства
-                    dataGridView_changeover_time.Rows[rowIndex].Cells[columnIndex].Value = dataGridView_changeover_time.Rows[rowIndex % DataType].Cells[columnIndex].Value;
-            }
+            selectoinType = SelectoinType.TournamentSelection;
         }
+
+        /// <summary>
+        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.RouletteMethod (Метод рулетки)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RadioButton_RouletteMethod_change(object sender, EventArgs e)
+        {
+            selectoinType = SelectoinType.RouletteMethod;
+        }
+
+        /// <summary>
+        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.UniformRanking (Равномерное ранжирование)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RadioButton_UniformRanking_change(object sender, EventArgs e)
+        {
+            selectoinType = SelectoinType.UniformRanking;
+        }
+
+        /// <summary>
+        /// Данная функция обрабатывает выбор обработки данных и отмечает выбора, как SelectoinType.SigmaClipping (Сигма отсечение)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RadioButton_SigmaClipping_change(object sender, EventArgs e)
+        {
+            selectoinType = SelectoinType.SigmaClipping;
+        }
+
+        #endregion
 
         /// <summary>
         /// Данная функция определяет входные параметры с графического компонента numeric_batch_count и записывает их в batchCount
@@ -1318,6 +1317,34 @@ namespace newAlgorithm
         {
             UpdateDevicePremTypeDGV(dataGridView_preMDuration);
             UpdateDevicePremTypeDGV(dataGridView_preMCosts);
+        }
+
+        /// <summary>
+        /// Функция управляет значением нижнего порога надёжности
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void betaValue_TextChanged(object sender, EventArgs e)
+        {
+
+            // Преобразуем входные данные в число типа Double
+            double.TryParse(betaValue.Text, out double beta);
+
+            // Если beta будет больше 1
+            if (beta > (double)1.0)
+            {
+                MessageBox.Show("Ошибка. Значение beta не может быть больше 1");
+                betaValue.Text = (0.9999).ToString();
+                return;
+            }
+
+            // Если beta будет меньше 0
+            if (beta < (double)0.0)
+            {
+                MessageBox.Show("Ошибка. Значение beta не может быть меньше 0");
+                betaValue.Text = (0.0001).ToString();
+                return;
+            }
         }
 
         #endregion
@@ -2071,35 +2098,6 @@ namespace newAlgorithm
             return config;
 
         }
-
-        /// <summary>
-        /// Функция управляет значением нижнего порога надёжности
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void betaValue_TextChanged(object sender, EventArgs e)
-        {
-
-            // Преобразуем входные данные в число типа Double
-            double.TryParse(betaValue.Text, out double beta);
-
-            // Если beta будет больше 1
-            if (beta > (double)1.0)
-            {
-                MessageBox.Show("Ошибка. Значение beta не может быть больше 1");
-                betaValue.Text = (0.9999).ToString();
-                return;
-            }
-
-            // Если beta будет меньше 0
-            if (beta < (double)0.0)
-            {
-                MessageBox.Show("Ошибка. Значение beta не может быть меньше 0");
-                betaValue.Text = (0.0001).ToString();
-                return;
-            }
-        }
-
 
     }
 }

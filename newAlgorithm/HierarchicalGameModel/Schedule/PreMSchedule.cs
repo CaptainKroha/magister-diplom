@@ -80,7 +80,7 @@ namespace magisterDiplom.Fabric
             {   
                 for (int batch = 0; batch < ScheduleSize(); batch++)
                 {
-                    int time = startProcessing[device][batch].Last() + config.proccessingTime[device, BatchType(batch)];
+                    int time = CompletionTimeLastJobOfBatch(device, batch);
 
                     // Проверяем ограничение надёжности
                     if (SystemReliabilityBy(time) < config.beta)
@@ -382,16 +382,6 @@ namespace magisterDiplom.Fabric
         protected int PreMaintenceCompletionTimeAfter(int device, int batch)
         {
             return CompletionTimeLastJobOfBatch(device, batch) + PreMaintanceDurationAfter(device, batch);
-        }
-
-        protected int CompletionTimeLastJobOfBatch(int device, int batch)
-        {
-            return JobCompletionTime(device, batch, BatchSize(batch) - 1);
-        }
-
-        protected int JobCompletionTime(int device, int batch, int job)
-        {
-            return startProcessing[device][batch][job] + config.proccessingTime[device, schedule[batch].Type];
         }
 
         #endregion

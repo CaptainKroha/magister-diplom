@@ -50,7 +50,27 @@ namespace magisterDiplom.Fabric
 
         public override void Optimize()
         {
-            throw new NotImplementedException();
+            Calculate();
+            if (SolutionUnacceptable())
+            {
+                success = false;
+                return;
+            }
+
+            for (int batch = 0; batch < ScheduleSize() - 1; batch++)
+            {
+                for (int device = 0; device < config.deviceCount; device++)
+                {
+                    Y_l[device].UnsetPreMaintence(0, batch);
+                    Calculate();
+                    if (SolutionUnacceptable())
+                    {
+                        Y_l[device].SetPreMaintence(0, batch);
+                    }
+                }
+            }
+
+            success = true;
         }
 
         public override SecondLevelOutput Result()

@@ -37,19 +37,19 @@ namespace magisterDiplom.Model
             }  
         }
 
-        public virtual void SetPreMaintence(int device, int packet)
+        public virtual void SetPreMaintence(int device, int batch)
         {
-            _data[device][packet] = 1;
+            _data[device][batch] = 1;
         }
 
-        public virtual void UnsetPreMaintence(int device, int packet)
+        public virtual void UnsetPreMaintence(int device, int batch)
         {
-            _data[device][packet] = 0;
+            _data[device][batch] = 0;
         }
 
-        public int PreMaintenceStatusAfter(int device, int packet)
+        public int PreMaintenceStatusAfter(int device, int batch)
         {
-            return _data[device][packet];
+            return _data[device][batch];
         }
 
         public void Clear()
@@ -72,12 +72,12 @@ namespace magisterDiplom.Model
         public MatrixYPreMTypes(int rows) : base(rows)
         { }
 
-        public int PreMaintenceStatusAfter(int packet)
+        public int PreMaintenceStatusAfter(int batch)
         {
             int result = -1;
             for (int i = 0; i < _rows; i++)
             {
-                if (_data[i][packet] == 1)
+                if (_data[i][batch] == 1)
                 {
                     result = i;
                     break;
@@ -92,14 +92,14 @@ namespace magisterDiplom.Model
             SetPreMaintence(0, _columns - 1);
         }
 
-        public override void SetPreMaintence(int preMType, int packet)
+        public override void SetPreMaintence(int preMType, int batch)
         {
-            _data[preMType][packet] = 1;
+            _data[preMType][batch] = 1;
         }
 
-        public override void UnsetPreMaintence(int preMType, int packet)
+        public override void UnsetPreMaintence(int preMType, int batch)
         {
-            _data[preMType][packet] = 0;
+            _data[preMType][batch] = 0;
         }
     }
 }

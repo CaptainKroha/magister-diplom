@@ -194,5 +194,15 @@ namespace magisterDiplom
             return schedule[batch].Size;
         }
 
+        protected int CompletionTimeLastJobOfBatch(int device, int batch)
+        {
+            return JobCompletionTime(device, batch, BatchSize(batch) - 1);
+        }
+
+        protected int JobCompletionTime(int device, int batch, int job)
+        {
+            return startProcessing[device][batch][job] + config.proccessingTime[device, schedule[batch].Type];
+        }
+
     }
 }

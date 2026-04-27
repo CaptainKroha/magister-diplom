@@ -460,26 +460,26 @@ namespace newAlgorithm
                 //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
 
                 // Если построение расписание прошло успешно
-                SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput = (SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput) secondLevel.Build(GetMForAMatrix(tempM), tempM);
+                var secondLevelOutput = (TypedPreMShedule.TypedPreMaintenceSecondLevelOutput) secondLevel.Build(GetMForAMatrix(tempM), tempM);
                 if (secondLevelOutput.Success)
                 {
 
                     // Если установлен флаг визуализации
-                    if (Form1.vizualizationOn)
-                    {
-                        // Визуализируем промежуточные данные через ExcelVisualizer
-                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
-                    }
+                    //if (Form1.vizualizationOn)
+                    //{
+                    //    // Визуализируем промежуточные данные через ExcelVisualizer
+                    //    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
+                    //}
                     var fBuf = secondLevel.Makespan;
                     string s = ListUtils.MatrixIntToString(tempM, ", ", "", ";");
                     file.Write(s + " " + fBuf);
                     // MessageBox.Show(s + " Время обработки " + fBuf);
                     if (fBuf < f1Optimal)
                     {
-                        if (Form1.vizualizationOn)
-                        {
-                           _visualizer.MarkAsOptimal(compositionNumber);
-                        }
+                        //if (Form1.vizualizationOn)
+                        //{
+                        //   _visualizer.MarkAsOptimal(compositionNumber);
+                        //}
                         
 
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(tempM);
@@ -495,15 +495,15 @@ namespace newAlgorithm
                     file.WriteLine();
 
                 }
-                else if (Form1.vizualizationOn && Form1.showND)
-                {
-                    // Визуализируем промежуточные данные (неудачное расписание)
-                    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
-                        false);
+                //else if (Form1.vizualizationOn && Form1.showND)
+                //{
+                //    // Визуализируем промежуточные данные (неудачное расписание)
+                //    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
+                //        false);
 
-                    //    // Увеличиваем счётчик составов пакетов заданий
-                    compositionNumber++;
-                }
+                //    //    // Увеличиваем счётчик составов пакетов заданий
+                //    compositionNumber++;
+                //}
             }
         }
 
@@ -988,8 +988,7 @@ namespace newAlgorithm
             }
         }
 
-        
-         public void GenetateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
+        public void GenetateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
         {
 
             // Устанавливам номер строки
@@ -1113,10 +1112,10 @@ namespace newAlgorithm
                     {
 
                         // Если установлен флаг визуализации
-                        if (Form1.vizualizationOn)
-                        {
-                            _visualizer.MarkAsOptimal(compositionNumber - 1);
-                        }
+                        //if (Form1.vizualizationOn)
+                        //{
+                        //    _visualizer.MarkAsOptimal(compositionNumber - 1);
+                        //}
                         // Копируем матрицу с лучшим решением
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
 
@@ -1531,62 +1530,5 @@ namespace newAlgorithm
             return result;
         }
 
-        #region Неиспользуемые функции
-
-        /// <summary>
-        /// Нужна для отладки вывода массива 
-        /// </summary>
-        /// <param name="m">входной лист</param>
-        /// <returns>лист в виде строки</returns>
-        // private static string PrintList(List<int> m)
-        // {
-        //     var result = "";
-        //     foreach (var t in m)
-        //     {
-        //         result += t + ", ";
-        //     }
-        //     return result;
-        // }
-
-        /// <summary>
-        /// Проверка на достижение максимально возможного решения по составам типов
-        /// </summary>
-        /// <param name="inMatrix">Матрица текущих составов</param>
-        // private void CheckSolution(IReadOnlyList<List<int>> inMatrix)
-        // {
-        //     for (var i = 0; i < inMatrix.Count; i++)
-        //     {
-        //         var elem = inMatrix[i][0];
-        // 
-        // 
-        //         if (elem != 2)
-        //             continue;
-        // 
-        //         var count = 1;
-        //         for (var j = 1; j < inMatrix[i].Count; j++)
-        //         {
-        //             if (inMatrix[i][j] == elem)
-        //             {
-        //                 count++;
-        //             }
-        //         }
-        //         if (count == inMatrix[i].Count)
-        //         {
-        //             _i[i] = 0;
-        //         }
-        //     }
-        // }
-
-        /// <summary>
-        /// Функция вычисления f1 критерия
-        /// </summary>
-        /// <param name="inMatrix">Матрица А на текущем шаге</param>
-        /// <returns>Значение критериия</returns>
-        // public int GetCriterion(List<List<int>> inMatrix)
-        // {
-        //     return inMatrix.SelectMany(t => t).Sum();
-        // }
-
-        #endregion
     }
 }
