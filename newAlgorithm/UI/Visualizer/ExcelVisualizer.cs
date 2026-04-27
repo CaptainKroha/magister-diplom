@@ -98,7 +98,7 @@ namespace magisterDiplom.UI.Visualizer
         /// <summary>
         /// Визуализация результатов текущей итерации
         /// </summary>
-        public void VisualizeResult(int compositionNumber, SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput, SecondLevel secondLevel , List<List<int>> matrixA, PreMConfiguration preMConfig, ref int helpRowNumber, bool isSuccessfully = true)
+        public void VisualizeSimplePreMResult(int compositionNumber, SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput, SecondLevel secondLevel , List<List<int>> matrixA, PreMConfiguration preMConfig, ref int helpRowNumber, bool isSuccessfully = true)
         {
             if (isSuccessfully)
             {
@@ -107,7 +107,7 @@ namespace magisterDiplom.UI.Visualizer
                 excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = $"{secondLevelOutput.F2_Criteria}";
 
                 // Визуализируем промежуточные данные
-                VisualizeData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber);
+                VisualizeSimplePreMData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber);
             }
             else if (Form1.showND)
             {
@@ -116,7 +116,7 @@ namespace magisterDiplom.UI.Visualizer
                 excelSheet.Cells[displayRowNumber + compositionNumber, displayColumnNumber + 2] = "#N/A";
 
                 // Визуализируем промежуточные данные
-                VisualizeData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber, false);
+                VisualizeSimplePreMData(compositionNumber, matrixA, secondLevelOutput, secondLevel, preMConfig, ref helpRowNumber, false);
             }
         }
 
@@ -427,7 +427,7 @@ namespace magisterDiplom.UI.Visualizer
         /// <param name="preMConfig">Конфигурационная структура для отображения общих данных</param>
         /// <param name="row">Номер строки начала отрисовки</param>
         /// <param name="isSuccessfully">Флаг построения расписания</param>
-        private void VisualizeData(
+        private void VisualizeSimplePreMData(
             int compositionNumber,
             List<List<int>> matrixA,
             SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput,
@@ -582,6 +582,10 @@ namespace magisterDiplom.UI.Visualizer
 
                     // Объединяем несколько ячеек для заголовка
                     r = metaDataSheet.Range[metaDataSheet.Cells[row, col], metaDataSheet.Cells[row, col + batchSize]];
+                    if ((bool)r.MergeCells)
+                    {
+                        r.UnMerge();
+                    }
                     r.Merge(true);
 
                     // Выводим заголовок таблицы

@@ -393,7 +393,7 @@ namespace newAlgorithm
                     if (Form1.vizualizationOn)
                     {
                         // Визуализируем промежуточные данные через ExcelVisualizer
-                        _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
+                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
                     }
                     var fBuf = secondLevel.Makespan;
                     string s = ListUtils.MatrixIntToString(tempM, ", ", "", ";");
@@ -423,7 +423,82 @@ namespace newAlgorithm
                 else if (Form1.vizualizationOn && Form1.showND)
                 {
                     // Визуализируем промежуточные данные (неудачное расписание)
-                    _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
+                    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
+                        false);
+
+                    //    // Увеличиваем счётчик составов пакетов заданий
+                    compositionNumber++;
+                }
+            }
+        }
+        
+        private void CombinationTypeWithTypedPremaintences(
+            StreamWriter file,
+            List<List<List<int>>> tempMatrix,
+            int type,
+            List<List<int>> tempM,
+            ref bool solutionFlag,
+            ref SecondLevel secondLevel,
+            ref TypedPreMConfiguration config,
+            ref int helpRowNumber
+        ) {
+            if (type < config.dataTypesCount)
+            {
+                for (var variantOfSplitIndex = 0; variantOfSplitIndex < _a2[type].Count; variantOfSplitIndex++)
+                {
+                    List<List<int>> tempB = (tempM == null) ? new List<List<int>>() : ListUtils.MatrixIntDeepCopy(tempM);
+                    tempB.Add(tempMatrix[type][variantOfSplitIndex]);
+                    CombinationTypeWithTypedPremaintences(file, tempMatrix, type + 1, tempB, ref solutionFlag, ref secondLevel, ref config, ref helpRowNumber);
+                }
+            }
+            else
+            {
+                // Если флаг логгирования установлен
+                //if (Form1.loggingOn)
+
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+
+                // Если построение расписание прошло успешно
+                SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput = (SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput) secondLevel.Build(GetMForAMatrix(tempM), tempM);
+                if (secondLevelOutput.Success)
+                {
+
+                    // Если установлен флаг визуализации
+                    if (Form1.vizualizationOn)
+                    {
+                        // Визуализируем промежуточные данные через ExcelVisualizer
+                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
+                    }
+                    var fBuf = secondLevel.Makespan;
+                    string s = ListUtils.MatrixIntToString(tempM, ", ", "", ";");
+                    file.Write(s + " " + fBuf);
+                    // MessageBox.Show(s + " Время обработки " + fBuf);
+                    if (fBuf < f1Optimal)
+                    {
+                        if (Form1.vizualizationOn)
+                        {
+                           _visualizer.MarkAsOptimal(compositionNumber);
+                        }
+                        
+
+                        bestMatrixA = ListUtils.MatrixIntDeepCopy(tempM);
+                        solutionFlag = true;
+                        f1Optimal = fBuf;
+                        file.Write(" +");
+                        return;
+                    }
+
+                    // Увеличиваем счётчик составов пакетов заданий
+                    compositionNumber++;
+                    
+                    file.WriteLine();
+
+                }
+                else if (Form1.vizualizationOn && Form1.showND)
+                {
+                    // Визуализируем промежуточные данные (неудачное расписание)
+                    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
                         false);
 
                     //    // Увеличиваем счётчик составов пакетов заданий
@@ -636,7 +711,7 @@ namespace newAlgorithm
                         if (Form1.vizualizationOn)
                         {
                             // Визуализируем промежуточные данные
-                            _visualizer.VisualizeResult(compositionNumber,secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
+                            _visualizer.VisualizeSimplePreMResult(compositionNumber,secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
                         }
 
                         // Получаем f1 критерий
@@ -650,7 +725,7 @@ namespace newAlgorithm
                     } else if (Form1.vizualizationOn && Form1.showND)
                     {
                          // Визуализируем промежуточные данные (неудачно)
-                        _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
+                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
                         compositionNumber++;
                     }
                     
@@ -682,7 +757,7 @@ namespace newAlgorithm
                     if (Form1.vizualizationOn)
                     {
                          // Визуализируем промежуточные данные
-                        _visualizer.VisualizeResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
+                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
                     }
 
                     compositionNumber++;
@@ -711,7 +786,7 @@ namespace newAlgorithm
                     } else if (Form1.vizualizationOn && Form1.showND)
                     {
                          // Визуализируем промежуточные данные
-                        _visualizer.VisualizeResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
+                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
                     
                        compositionNumber++;
                     }
@@ -807,7 +882,7 @@ namespace newAlgorithm
                                     if (Form1.vizualizationOn && Form1.showND)
                                     {
                                          // Визуализируем промежуточные данные
-                                        _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber, false);
+                                        _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber, false);
                                         compositionNumber++;
                                     }
                                     
@@ -821,7 +896,7 @@ namespace newAlgorithm
                                 if (Form1.vizualizationOn)
                                 {
                                      // Визуализируем промежуточные данные
-                                    _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3 , secondLevel, tempA, config, ref helpRowNumber);
+                                    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput3 , secondLevel, tempA, config, ref helpRowNumber);
                                 }
 
                                 compositionNumber++;
@@ -913,7 +988,353 @@ namespace newAlgorithm
             }
         }
 
+        
+         public void GenetateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
+        {
 
+            // Устанавливам номер строки
+            int helpRowNumber = 1;
+
+            // Формируем имя файла
+            //logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}";
+
+            //// Инициализируем значения
+            //compositionNumber = 1;
+            //displayRowNumber = 1;
+            //displayColumnNumber = 1;
+
+            //// Инициализируем объект для работы с Excel
+            //excelApplication = null;
+
+            //// Инициализируем владки для работы с Excel
+            //excelSheet = null; metaDataSheet = null;
+
+            //// Объявляем линейный график
+            //ChartObjects linerChart = null;
+            // Инициализируем значения
+            // compositionNumber = 1;
+            
+            // if (Form1.vizualizationOn) {
+            //     //Инициализируем объект для работы с Excel через Visualizer
+            //     _visualizer.Initialize(config);
+            // }
+
+            // Переопределяем значение оптимального критерий f1
+            f1Optimal = int.MaxValue;
+            f1Current = int.MaxValue;
+
+            using (var file = new StreamWriter(fileName))
+            {
+
+                // Создаём экземпляр класса для работы с нижним уровнем
+                //SimplePreMSchedule schedule = new SimplePreMSchedule(config, preMConfig);
+                SecondLevel secondLevel = SecondLevel.CreateForTypedPreMaintence(config);
+
+                // Если флаг логгирования установлен
+                //if (Form1.loggingOn)
+
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+
+                // TODO: Костыль для фиксированных пакетов
+                {
+                    GenerateFixedBatchesSolution();
+
+                    // Если флаг логгирования установлен
+                    //if (Form1.loggingOn)
+
+                    //    // Задаём новое имя файла для записи
+                    //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+
+                    // Если построение расписание выполнено удачно
+                    TypedPreMShedule.TypedPreMaintenceSecondLevelOutput secondLevelOutput = 
+                       (TypedPreMShedule.TypedPreMaintenceSecondLevelOutput) secondLevel.Build(GetMForAMatrix(PrimeMatrixA), PrimeMatrixA);
+                    if (secondLevelOutput.Success)
+                    {
+
+                        // Если установлен флаг визуализации
+                        // if (Form1.vizualizationOn)
+                        // {
+                        //     // Визуализируем промежуточные данные
+                        //     _visualizer.VisualizeResult(compositionNumber,secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
+                        // }
+
+                        // Получаем f1 критерий
+                        f1Current = secondLevel.Makespan;
+
+                        // MessageBox.Show(ListUtils.MatrixIntToString(PrimeMatrixA, ", ", "", ";") + "Время обработки " + f1Current);
+                        f1Optimal = f1Current;
+                        file.WriteLine(f1Optimal);
+                        isBestSolution = true;
+                        compositionNumber++;
+                    }
+                    // else if (Form1.vizualizationOn && Form1.showND)
+                    // {
+                    //      // Визуализируем промежуточные данные (неудачно)
+                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
+                    //     compositionNumber++;
+                    // }
+                    
+                }
+
+                // Переопределяем значение оптимального критерий f1
+                f1Optimal = int.MaxValue;
+                f1Current = int.MaxValue;
+
+                // Генерируем начальное решение
+                GenerateStartSolution();
+
+                // Если флаг логгирования установлен
+                //if (Form1.loggingOn)
+
+                //    // Задаём новое имя файла для записи
+                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+
+                // Вызываем расчёты
+                TypedPreMShedule.TypedPreMaintenceSecondLevelOutput secondLevelOutput2 = (TypedPreMShedule.TypedPreMaintenceSecondLevelOutput)secondLevel.Build(GetMForAMatrix(PrimeMatrixA), PrimeMatrixA);
+                if (secondLevelOutput2.Success)
+                {
+
+                    // Получаем f1
+                    f1Current = secondLevel.Makespan;
+                    // MessageBox.Show(ListUtils.MatrixIntToString(PrimeMatrixA, ", ", "", ";") + " Время обработки " + f1Current);
+
+                    // Если установлен флаг визуализации
+                    // if (Form1.vizualizationOn)
+                    // {
+                    //      // Визуализируем промежуточные данные
+                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
+                    // }
+
+                    compositionNumber++;
+
+                    // Если текущей критерий лучше оптимального
+                    if (f1Current < f1Optimal)
+                    {
+
+                        // Если установлен флаг визуализации
+                        if (Form1.vizualizationOn)
+                        {
+                            _visualizer.MarkAsOptimal(compositionNumber - 1);
+                        }
+                        // Копируем матрицу с лучшим решением
+                        bestMatrixA = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
+
+                        // Устанавливаем флаг лучшего решения
+                        isBestSolution = true;
+
+                        // Переопределяем критерий f1 лучшего решения
+                        f1Optimal = f1Current;
+
+                        // Логируем нахождение лучшего решения
+                        file.Write(" +");
+
+                    } 
+                    // else if (Form1.vizualizationOn && Form1.showND)
+                    // {
+                    //      // Визуализируем промежуточные данные
+                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput2, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
+                    //
+                    //    compositionNumber++;
+                    // }
+                }
+
+                // Инициализируем матрицу _a1
+                {
+                    _a1 = new List<List<List<int>>>();
+
+                    // Для каждого типа данных выполняем обработку
+                    for (var dataType = 0; dataType < config.dataTypesCount; dataType++)
+                    {
+                        _a1.Add(new List<List<int>>());
+                        _a1[dataType].Add(new List<int>());
+                        _a1[dataType][0] = ListUtils.VectorIntDeepCopy(PrimeMatrixA[dataType]);
+                    }
+                }
+
+                // Если пакеты не фиксированные
+                if (!config.isFixedBatches)
+                {
+
+                    // До тех пор, поа не расмотрели все типы выполняем обработку
+                    while (CheckType())
+                    {
+                        // Буферезируем текущее решение для построение нового на его основе
+                        _ai = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
+
+                        // Если текущее решение лучше
+                        if (isBestSolution)
+                        {
+                            // Копируем текущее решение во временный массив _a1
+                            
+                            _a1 = new List<List<List<int>>>();
+
+                            // Для каждого типа данных выполняем обработку
+                            for (var dataType = 0; dataType < config.dataTypesCount; dataType++)
+                            {
+                                _a1.Add(new List<List<int>>());
+                                _a1[dataType].Add(new List<int>());
+                                _a1[dataType][0] = ListUtils.VectorIntDeepCopy(PrimeMatrixA[dataType]);
+                            }
+
+                            // Сбрасываем флаг лучшего решения
+                            isBestSolution = false;
+                        }
+
+                        // TODO: Ненужное присваивание
+                        List<List<int>> tempA; // var tempA = ListUtils.MatrixIntDeepCopy(_ai);
+                        bestMatrixA = ListUtils.MatrixIntDeepCopy(_ai);
+                        
+                        // TODO: Спорный случай, всегда перезатираем лучшее решение из костыля
+                        f1Optimal = f1Current;
+
+                        // Для каждого типа и каждого решения в типе строим новое решение и проверяем его на критерий
+                        // Строим A2 и параллельно проверяем критерий
+                        _a2 = new List<List<List<int>>>(config.dataTypesCount);
+
+                        // Выполяем инициализацию
+                        _a2.AddRange(Enumerable.Repeat(new List<List<int>>(), config.dataTypesCount));
+
+                        string s;
+                        file.WriteLine("окрестность 1 вида");
+
+                        // Для каждого типа данных в рассмотрении (_i[dataType] != 0) выполняем обработку
+                        for (var dataType = 0; dataType < config.dataTypesCount; dataType++)
+                        {
+
+                            // Если данный тип данных не находится в рассмотрении
+                            if (_i[dataType] <= 0)
+
+                                // Пропускаем итерацию
+                                continue;
+
+                            // Формируем новый состав партий для типа dataType
+                            _a2[dataType] = NewData(dataType);
+
+                            // Для каждого пакета в новом составе партий выполняем обработку
+                            for (var batchIndex = 0; batchIndex < _a2[dataType].Count; batchIndex++)
+                            {
+                                tempA = SetTempAFromA2(dataType, batchIndex);
+
+                                // Если флаг логгирования установлен
+                                //if (Form1.loggingOn)
+
+                                //    // Задаём новое имя файла для записи
+                                //    schedule.SetLogFile($"{logFileNamePrefix}_{compositionNumber}.log");
+
+                                // Если расписание построилось не успешно
+                                TypedPreMShedule.TypedPreMaintenceSecondLevelOutput secondLevelOutput3 = (TypedPreMShedule.TypedPreMaintenceSecondLevelOutput)secondLevel.Build(GetMForAMatrix(tempA), tempA);
+                                if (!secondLevelOutput3.Success)
+                                {
+                                    // if (Form1.vizualizationOn && Form1.showND)
+                                    // {
+                                    //      // Визуализируем промежуточные данные
+                                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber, false);
+                                    //     compositionNumber++;
+                                    // }
+                                    
+                                    // Пропускаем обработку
+                                    continue;
+                                }
+
+                                // Получаем критерий f1
+                                var fBuf = secondLevel.Makespan;
+
+                                // if (Form1.vizualizationOn)
+                                // {
+                                //      // Визуализируем промежуточные данные
+                                //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3 , secondLevel, tempA, config, ref helpRowNumber);
+                                // }
+
+                                compositionNumber++;
+
+                                s = ListUtils.MatrixIntToString(tempA, ", ", "", ";");
+                                file.Write(s + " " + fBuf);
+                                // MessageBox.Show(s + " Время обработки " + fBuf);
+
+                                // Если текущее решение лучше
+                                if (fBuf < f1Optimal)
+                                {
+                                    // if (Form1.vizualizationOn)
+                                    // {
+                                    //     _visualizer.MarkAsOptimal(compositionNumber - 1);
+                                    // }
+
+                                    // Копируем матрицу с лучшим решением
+                                    bestMatrixA = ListUtils.MatrixIntDeepCopy(tempA);
+
+                                    // Устанавливаем флаг лучшего решения
+                                    isBestSolution = true;
+
+                                    // Переопределяем критерий f1 лучшего решения
+                                    f1Optimal = fBuf;
+
+                                    // Логируем нахождение лучшего решения
+                                    file.Write(" +");
+                                }
+
+                                // Логируем
+                                file.WriteLine();
+                            }
+                        }
+                        
+                        // Если лучшее решения не было найдено
+                        if (!isBestSolution)
+                        {
+
+                            // Логируем вызов комбинаций типов
+                            file.WriteLine("комбинации типов");
+
+                            // Формируем следующий состав пакетов заданий
+                            CombinationTypeWithTypedPremaintences(file, _a2, 0, null, ref isBestSolution, ref secondLevel, ref config, ref helpRowNumber);
+                        }
+
+                        // Если лучшее решения было найдено
+                        if (isBestSolution)
+                        {
+                            // MessageBox.Show("Лучшее решение " + ListUtils.MatrixIntToString(bestMatrixA, ", ", "", ";") + " Время обработки " + f1Optimal);
+
+                            // Запоминаем лучшее решение
+                            PrimeMatrixA = ListUtils.MatrixIntDeepCopy(bestMatrixA);
+
+                            // TODO: Проверить излишнее переопределение f1Current в f1Optimal
+                            f1Current = f1Optimal;
+
+                            continue;
+                        }
+
+                        // Для каждого типа данных выполняем обработку
+                        for (int dataType = 0; dataType < config.dataTypesCount; dataType++)
+                        {
+                            _a1[dataType] = ListUtils.MatrixIntDeepCopy(_a2[dataType]);
+                            if (!_a1[dataType].Any() || !_a1[dataType][0].Any())
+                                _i[dataType] = 0;
+                        }
+                    }
+                }
+
+                // Проверяем успешность работы программы
+                if (f1Optimal == int.MaxValue)
+                {
+                    MessageBox.Show("Решения не было найдено");
+                    return;
+                }
+
+                // Если флаг визуализации установлен
+                // if (Form1.vizualizationOn)
+                // {
+                //     // Создаем финальный график через Visualizer
+                //     _visualizer.CreateFinalChart(compositionNumber);
+                // }
+
+                // Логируем лучший критерий f1
+                file.WriteLine(f1Optimal);
+                file.Close();
+                MessageBox.Show("Решения найдены f1 = " + f1Optimal);
+
+            }
+        }
+        
         /// <summary>
         /// Формирование перебора для всех возможных решений из А2
         /// </summary>
