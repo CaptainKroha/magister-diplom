@@ -910,6 +910,37 @@ namespace newAlgorithm
             firstLevel.GenetateSolutionWithTypedPremaintenance("TypedPreM", TypedPreMConfiguration());
         }
 
+        private void TypedPreM_ConfSave_Btn_Click(object sender, EventArgs e)
+        {
+            // Объявляем конфигурационную структуру данных
+            var preMConfig = TypedPreMConfiguration();
+
+            // Открываем диалоговое окно для сохранения файла
+            {
+                Stream myStream;
+                SaveFileDialog fileDialog = new SaveFileDialog
+                {
+                    Filter = "json files (*.json)|*.json",
+                    FilterIndex = 2,
+                    RestoreDirectory = true
+                };
+
+                // Пытаемя открыть диалоговое окно
+                if (fileDialog.ShowDialog() == DialogResult.OK)
+                    if ((myStream = fileDialog.OpenFile()) != null)
+                    {
+                        byte[] buffer = Encoding.Default.GetBytes($"{jsonText}");
+                        myStream.Write(buffer, 0, buffer.Length);
+                        myStream.Close();
+                    }
+            }
+        }
+
+        private void TypedPreM_ConfLoad_Btn_Click(object sender, EventArgs e)
+        {
+
+        }
+
         #endregion
 
         #region Обработка рандомизаций и выбора вкладки
