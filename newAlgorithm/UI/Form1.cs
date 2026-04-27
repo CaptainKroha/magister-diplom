@@ -101,9 +101,9 @@ namespace newAlgorithm
             InitializeForm();
         }
 
-        #region Обработка событий разного рода
+        #region Обработка событий
 
-        #region Обработка кнопок
+        #region Обработчики нажатия кнопок
 
         /// <summary>
         /// Данная функция вызывается при нажание на кнопку "Второй метод"
@@ -705,6 +705,183 @@ namespace newAlgorithm
             TablesRebuild();
         }
 
+        private void maintenceDurationSetButton_Click(object sender, EventArgs e)
+        {
+            int preMaintenceDuration = (int)preMaintenceDurationSetValue.Value;
+            int devicesCount = (int)numeric_device_count.Value;
+            List<int> preMaintenceTimes = new List<int>();
+            for (int i = 0; i < devicesCount; i++)
+            {
+                preMaintenceTimes.Add(preMaintenceDuration);
+            }
+            SetPreMaintenanceTimes(preMaintenceTimes);
+        }
+
+        private void failureRatesSetButton_Click(object sender, EventArgs e)
+        {
+            double failureRate = (double)failureRatesSetValue.Value;
+            int devicesCount = (int)numeric_device_count.Value;
+            List<double> failureRates = new List<double>();
+            for (int i = 0; i < devicesCount; i++)
+            {
+                failureRates.Add(failureRate);
+            }
+            SetFailureRates(failureRates);
+        }
+
+        private void restoreRatesSetButton_Click(object sender, EventArgs e)
+        {
+            double restoringRate = (double)restoreRatesSetValue.Value;
+            int devicesCount = (int)numeric_device_count.Value;
+            List<double> restoringRates = new List<double>();
+            for (int i = 0; i < devicesCount; i++)
+            {
+                restoringRates.Add(restoringRate);
+            }
+            SetRestoringDevice(restoringRates);
+        }
+
+        /// <summary>
+        /// Фуния открывает диалоговое окно, для импорта параметров системы
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button_import_Click(object sender, EventArgs e)
+        {
+
+            // Объявляем конфигурационную структуру данных
+            PreMConfig preMConfig;
+
+            // Объявляем строку
+            string jsonText;
+
+            // Открываем диалоговое окно для открытия файла
+            {
+
+                OpenFileDialog fileDialog = new OpenFileDialog
+                {
+                    Filter = "json files (*.json)|*.json",
+                    FilterIndex = 2,
+                    RestoreDirectory = true
+                };
+
+                // Пытаемя открыть диалоговое окно
+                if (fileDialog.ShowDialog() == DialogResult.OK)
+                {
+
+                    // Читаем данные из json файла
+                    jsonText = File.ReadAllText(fileDialog.FileName);
+
+                    // Пытаемся десереализировать данные
+                    try
+                    {
+
+                        // Десереализируем данные
+                        preMConfig = JsonConvert.DeserializeObject<PreMConfig>(jsonText);
+
+                        // Импортируем данные из конфигурационной ПТО структуры
+                        ImportFromPreMConfig(preMConfig);
+
+                        // Обрабатываем ошибку десереализации
+                    }
+                    catch (JsonException ex)
+                    {
+
+                        // Выводим информационное сообщение
+                        MessageBox.Show("Указанный имеет некорректный формат.", "Ошибка");
+
+                        // Прекращяем обработку
+                        return;
+                    }
+
+                }
+                else
+                {
+
+                    // Выводим информационное сообщение
+                    MessageBox.Show("Указан некорректный файл.", "Предупреждение");
+
+                    // Прекращяем обработку
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Функция открывает диалоговое окно, для экспорта параметров системы
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void button_export_Click(object sender, EventArgs e)
+        {
+
+            // Объявляем конфигурационную структуру данных
+            PreMConfig preMConfig = GetPreMConfig();
+
+            // Сереализируем данные
+            string jsonText = JsonConvert.SerializeObject(preMConfig, Formatting.Indented);
+
+            // Открываем диалоговое окно для сохранения файла
+            {
+                Stream myStream;
+                SaveFileDialog fileDialog = new SaveFileDialog
+                {
+                    Filter = "json files (*.json)|*.json",
+                    FilterIndex = 2,
+                    RestoreDirectory = true
+                };
+
+                // Пытаемя открыть диалоговое окно
+                if (fileDialog.ShowDialog() == DialogResult.OK)
+                    if ((myStream = fileDialog.OpenFile()) != null)
+                    {
+                        byte[] buffer = Encoding.Default.GetBytes($"{jsonText}");
+                        myStream.Write(buffer, 0, buffer.Length);
+                        myStream.Close();
+                    }
+            }
+        }
+
+        private void GetPreMSolution_Click(object sender, EventArgs e)
+        {
+
+            // Получаем экземпляр конфигурационной структуры для ПТО
+            PreMConfig preMConfig = GetPreMConfig();
+
+            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
+            List<int> batchCountList = CreateBatchCountList();
+
+            // Формируем первый уровень
+            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
+
+            PreMConfiguration configuration = new PreMConfiguration(preMConfig);
+
+            // Выполняем генерацию данных для всех типов вторым алгоритмом
+            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", configuration);
+        }
+
+        private void getPreMSolutionOpt_Click(object sender, EventArgs e)
+        {
+            // Получаем экземпляр конфигурационной структуры для ПТО
+            PreMConfig preMConfig = GetPreMConfig();
+
+            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
+            List<int> batchCountList = CreateBatchCountList();
+
+            // Формируем первый уровень
+            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
+
+            // Выполняем генерацию данных для всех типов вторым алгоритмом
+            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
+        }
+
+        private void getTypedPreMSolutionBtn_Click(object sender, EventArgs e)
+        {
+            var firstLevel = new FirstLevel(GetConfig(), CreateBatchCountList());
+            var config = TypedPreMConfiguration();
+            //TODO: вызов метода firstLevel для построения расписания с типами ПТО
+        }
+
         #endregion
 
         #region Выбор способа обработки данных
@@ -935,6 +1112,7 @@ namespace newAlgorithm
             // Устанавливаем значение таблицы длительностей ПТО
             SetFailureRates(failureRates);
         }
+        
         #endregion
 
         #region Определяем входные параметры
@@ -1028,6 +1206,9 @@ namespace newAlgorithm
         private void Numeric_device_count_ValueChanged(object sender, EventArgs e)
         {
             TablesRebuild();
+            UpdateDevicePremTypeDGV(dataGridView_preMDuration);
+            UpdateDevicePremTypeDGV(dataGridView_preMCosts);
+            UpdatePreMaintenceGeneralDGV();
         }
 
         /// <summary>
@@ -1126,6 +1307,17 @@ namespace newAlgorithm
         private void NumericUpDown2_ValueChanged(object sender, EventArgs e)
         {
             xromossomiSize = Convert.ToInt32(numeric_xromossomi_size.Value);
+        }
+
+        /// <summary>
+        /// Обработчик изменения количества типов ПТО
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void numeric_preM_types_count_ValueChanged(object sender, EventArgs e)
+        {
+            UpdateDevicePremTypeDGV(dataGridView_preMDuration);
+            UpdateDevicePremTypeDGV(dataGridView_preMCosts);
         }
 
         #endregion
@@ -1257,71 +1449,12 @@ namespace newAlgorithm
 
             // Выполняем инициализацию внутренних таблиц
             TablesRebuild();
+            UpdateDevicePremTypeDGV(dataGridView_preMDuration);
+            UpdateDevicePremTypeDGV(dataGridView_preMCosts);
+            UpdatePreMaintenceGeneralDGV();
         }
 
         #endregion
-
-        #region Страшно это трогать
-        /*
-        /// <summary>
-        /// Неизвестный кусок кода, который страшно удалять, даже если он нигде не используется
-        /// </summary>
-        /// <param name="_in">Неясно почему и зачем мы это делаем, но так делали наши предшественники, давайте будет уважать их труд и оставим данный кусок кода. Или нет.</param>
-        /// <returns></returns>
-        private List<List<int>> СоставыПартий(IReadOnlyList<List<int>> _in)
-        {
-            var a = new List<List<int>>();
-            var count = 0;
-            a.Add(new List<int>());
-            a[count] = Copy(_in[0]);
-            count++;
-            foreach (var t in _in)
-            {
-                for (var j = 1; j < t.Count; j++)
-                {
-                    do
-                    {
-                        a.Add(new List<int>());
-                        a[count] = Copy(a[count - 1]);
-                        a[count][0]--;
-                        a[count][j]++;
-                        count++;
-                    }
-                    while (a[count - 1][0] > a[count - 1][j]);
-                }
-            }
-            return a;
-        }
-        */
-        #endregion
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        private void GetPreMSolution_Click(object sender, EventArgs e)
-        {
-
-            // Получаем экземпляр конфигурационной структуры для ПТО
-            PreMConfig preMConfig = GetPreMConfig();
-
-            // Инициализируем расписание
-            Shedule.deviceCount = preMConfig.config.deviceCount;
-            Shedule.proccessingTime = preMConfig.config.proccessingTime;
-            Shedule.changeoverTime = GetChangeoverTimeList();
-
-            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
-            List<int> batchCountList = CreateBatchCountList();
-
-            // Формируем первый уровень
-            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
-
-            PreMConfiguration configuration = new PreMConfiguration(preMConfig);
-
-            // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", configuration);
-        }
 
         /// <summary>
         /// Установим матрицу времени выполнения заданий
@@ -1715,38 +1848,119 @@ namespace newAlgorithm
             return failureRates;
         }
 
-
         private void SetPreMaintenceDurations(List<List<int>> data)
         {
-            dataGridView_preMDuration.Rows.Clear();
-            dataGridView_preMDuration.Columns.Clear();
-
-            dataGridView_preMDuration.RowCount = data.Count;
-            dataGridView_preMDuration.ColumnCount = data[0].Count;
-
-            for(int device = 0; device < data.Count; device++)
-            {
-                dataGridView_preMDuration.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
-                for(int preMType = 0; preMType < data[0].Count; preMType++)
-                {
-                    dataGridView_preMDuration.Columns[preMType].HeaderCell.Value = $"Тип ПТО {preMType + 1}";
-                    dataGridView_preMDuration.Rows[device].Cells[preMType].Value = data[device][preMType];
-                }
-            }
+            SetDevicePremTypeDGV(dataGridView_preMDuration, data);
         }
 
         private List<List<int>> GetPreMaintenceDurations()
         {
-            var result = new List<List<int>>(dataGridView_preMDuration.RowCount);
-            for (int device = 0; device < dataGridView_preMDuration.RowCount; device++)
+            return GetDevicePremTypeDGV(dataGridView_preMDuration);
+        }
+
+        private void SetPreMaintenceCosts(List<List<int>> data)
+        {
+            SetDevicePremTypeDGV(dataGridView_preMCosts, data);
+        }
+
+        private List<List<int>> GetPreMaintenceCosts()
+        {
+            return GetDevicePremTypeDGV(dataGridView_preMCosts);
+        }
+
+        private void UpdateDevicePremTypeDGV(DataGridView dataGridView)
+        {
+            int deviceCount = (int) numeric_device_count.Value;
+            int preMTypeCount = (int) numeric_preM_types_count.Value;
+
+            dataGridView.Rows.Clear();
+            dataGridView.Columns.Clear();
+
+            dataGridView.RowCount = deviceCount;
+            dataGridView.ColumnCount = preMTypeCount;
+
+            if(deviceCount == 0 || preMTypeCount == 0)
             {
-                result.Add(new List<int>(dataGridView_preMDuration.ColumnCount));
-                for(int preMType = 0; preMType < dataGridView_preMDuration.ColumnCount; preMType++)
+                return;
+            }
+
+            for (int device = 0; device < deviceCount; device++)
+            {
+                dataGridView.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+                for (int preMType = 0; preMType < preMTypeCount; preMType++)
                 {
-                    result[device].Add(Convert.ToInt32(dataGridView_preMDuration.Rows[device].Cells[preMType].Value));
+                    dataGridView.Columns[preMType].HeaderCell.Value = $"Тип ПТО {preMType + 1}";
+                    dataGridView.Rows[device].Cells[preMType].Value = 0;
+                }
+            }
+        }
+
+        private void SetDevicePremTypeDGV(DataGridView dataGridView, List<List<int>> data)
+        {
+            UpdateDevicePremTypeDGV(dataGridView);
+
+            //TODO: проверка на соответствие размерностей матриц
+
+            for (int device = 0; device < data.Count; device++)
+            {
+                for (int preMType = 0; preMType < data[0].Count; preMType++)
+                {
+                    dataGridView.Rows[device].Cells[preMType].Value = data[device][preMType];
+                }
+            }
+        }
+
+        private List<List<int>> GetDevicePremTypeDGV(DataGridView dataGridView)
+        {
+            var result = new List<List<int>>(dataGridView.RowCount);
+            for (int device = 0; device < dataGridView.RowCount; device++)
+            {
+                result.Add(new List<int>(dataGridView.ColumnCount));
+                for (int preMType = 0; preMType < dataGridView.ColumnCount; preMType++)
+                {
+                    result[device].Add(Convert.ToInt32(dataGridView.Rows[device].Cells[preMType].Value));
                 }
             }
             return result;
+        }
+        
+        private void UpdatePreMaintenceGeneralDGV()
+        {
+            int deviceCount = (int) numeric_device_count.Value;
+
+            dataGridView_preM_general.Rows.Clear();
+            dataGridView_preM_general.RowCount = deviceCount;
+
+            for (int device = 0; device < deviceCount; device++)
+            {
+                dataGridView_preM_general.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+            }
+        }
+
+        private void SetPreMaintenceGeneral(List<List<int>> data)
+        {
+            UpdatePreMaintenceGeneralDGV();
+            SetInactionCosts(data[0]);
+        }
+
+        private List<int> GetInactionCosts()
+        {
+            var result = new List<int>(dataGridView_preM_general.RowCount);
+            int inactionCostColumnIndex = 0;
+            for(int device = 0; device < dataGridView_preM_general.RowCount; device++)
+            {
+                result.Add(Convert.ToInt32(dataGridView_preM_general.Rows[device].Cells[inactionCostColumnIndex].Value));
+            }
+            return result;
+        }
+
+        private void SetInactionCosts(List<int> data)
+        {
+            int inactionCostColumnIndex = 0;
+            for(int device = 0; device < dataGridView_preM_general.RowCount; device++)
+            {
+                dataGridView_preM_general.Rows[device].Cells[inactionCostColumnIndex].Value = data[device];
+            }
         }
 
         /// <summary>
@@ -1845,99 +2059,17 @@ namespace newAlgorithm
             );
         }
 
-        /// <summary>
-        /// Фуния открывает диалоговое окно, для импорта параметров системы
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void button_import_Click(object sender, EventArgs e)
+        private TypedPreMConfiguration TypedPreMConfiguration()
         {
-
-            // Объявляем конфигурационную структуру данных
-            PreMConfig preMConfig;
-
-            // Объявляем строку
-            string jsonText;
-
-            // Открываем диалоговое окно для открытия файла
+            var config = new TypedPreMConfiguration(GetPreMConfig())
             {
+                InactionCosts = GetInactionCosts(),
+                PreMaintenceTypesCount = (int)numeric_preM_types_count.Value,
+                PreMaintenanceCosts = new Model.Matrix(GetPreMaintenceCosts()),
+                PreMaintenanceDurations = new Model.Matrix(GetPreMaintenceDurations())
+            };
+            return config;
 
-                OpenFileDialog fileDialog = new OpenFileDialog
-                {
-                    Filter = "json files (*.json)|*.json",
-                    FilterIndex = 2,
-                    RestoreDirectory = true
-                };
-
-                // Пытаемя открыть диалоговое окно
-                if (fileDialog.ShowDialog() == DialogResult.OK) {
-
-                    // Читаем данные из json файла
-                    jsonText = File.ReadAllText(fileDialog.FileName);
-
-                    // Пытаемся десереализировать данные
-                    try {
-
-                        // Десереализируем данные
-                        preMConfig = JsonConvert.DeserializeObject<PreMConfig>(jsonText);
-
-                        // Импортируем данные из конфигурационной ПТО структуры
-                        ImportFromPreMConfig(preMConfig);
-
-                    // Обрабатываем ошибку десереализации
-                    } catch (JsonException ex) {
-
-                        // Выводим информационное сообщение
-                        MessageBox.Show("Указанный имеет некорректный формат.", "Ошибка");
-
-                        // Прекращяем обработку
-                        return;
-                    }
-
-                } else {
-
-                    // Выводим информационное сообщение
-                    MessageBox.Show("Указан некорректный файл.", "Предупреждение");
-
-                    // Прекращяем обработку
-                    return;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Функция открывает диалоговое окно, для экспорта параметров системы
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void button_export_Click(object sender, EventArgs e)
-        {
-
-            // Объявляем конфигурационную структуру данных
-            PreMConfig preMConfig = GetPreMConfig();
-
-            // Сереализируем данные
-            string jsonText = JsonConvert.SerializeObject(preMConfig, Formatting.Indented);
-
-            // Открываем диалоговое окно для сохранения файла
-            {
-                Stream myStream;
-                SaveFileDialog fileDialog = new SaveFileDialog
-                {
-                    Filter = "json files (*.json)|*.json",
-                    FilterIndex = 2,
-                    RestoreDirectory = true
-                };
-            
-                // Пытаемя открыть диалоговое окно
-                if (fileDialog.ShowDialog() == DialogResult.OK)
-                    if ((myStream = fileDialog.OpenFile()) != null)
-                    {
-                        byte[] buffer = Encoding.Default.GetBytes($"{jsonText}");
-                        myStream.Write(buffer, 0, buffer.Length);
-                        myStream.Close();
-                    }
-            }
         }
 
         /// <summary>
@@ -1968,60 +2100,6 @@ namespace newAlgorithm
             }
         }
 
-        private void maintenceDurationSetButton_Click(object sender, EventArgs e)
-        {
-            int preMaintenceDuration = (int) preMaintenceDurationSetValue.Value;
-            int devicesCount = (int) numeric_device_count.Value;
-            List<int> preMaintenceTimes = new List<int>();
-            for (int i = 0; i < devicesCount; i++) {
-                preMaintenceTimes.Add(preMaintenceDuration);
-            }
-            SetPreMaintenanceTimes(preMaintenceTimes);
-        }
-
-        private void failureRatesSetButton_Click(object sender, EventArgs e)
-        {
-            double failureRate = (double)failureRatesSetValue.Value;
-            int devicesCount = (int)numeric_device_count.Value;
-            List<double> failureRates = new List<double>();
-            for (int i = 0; i < devicesCount; i++)
-            {
-                failureRates.Add(failureRate);
-            }
-            SetFailureRates(failureRates);
-        }
-
-        private void restoreRatesSetButton_Click(object sender, EventArgs e)
-        {
-            double restoringRate = (double) restoreRatesSetValue.Value;
-            int devicesCount = (int)numeric_device_count.Value;
-            List<double> restoringRates = new List<double>();
-            for (int i = 0; i < devicesCount; i++)
-            {
-                restoringRates.Add(restoringRate);
-            }
-            SetRestoringDevice(restoringRates);
-        }
-
-        private void getPreMSolutionOpt_Click(object sender, EventArgs e)
-        {
-            // Получаем экземпляр конфигурационной структуры для ПТО
-            PreMConfig preMConfig = GetPreMConfig();
-
-            // Инициализируем расписание
-            Shedule.deviceCount = preMConfig.config.deviceCount;
-            Shedule.proccessingTime = preMConfig.config.proccessingTime;
-            Shedule.changeoverTime = GetChangeoverTimeList();
-
-            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
-            List<int> batchCountList = CreateBatchCountList();
-
-            // Формируем первый уровень
-            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
-
-            // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
-        }
 
     }
 }

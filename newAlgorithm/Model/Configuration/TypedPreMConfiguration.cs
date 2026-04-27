@@ -11,10 +11,9 @@ namespace magisterDiplom.Model.Configuration
 
         public Matrix PreMaintenanceCosts { get; set; }
 
-        public Matrix PreMaintenanceTimes { get; set; }
+        public Matrix PreMaintenanceDurations { get; set; }
 
-        public TypedPreMConfiguration() { }
-
+        public TypedPreMConfiguration(PreMConfig preMConfig) : base(preMConfig) { }
 
     }
 }
