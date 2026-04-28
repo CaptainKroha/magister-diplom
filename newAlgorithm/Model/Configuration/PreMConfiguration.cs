@@ -21,22 +21,22 @@ namespace magisterDiplom.Model.Configuration
         /// <summary>
         /// Список из времён времени выполнения ПТО для соответствующих приборов: preMaintenanceTimes = [deviceCount]
         /// </summary>
-        public readonly List<int> preMaintenanceTimes;
+        public List<int> preMaintenanceTimes;
 
         /// <summary>
         /// Список интенсивностей отказов для соответствующих приборов: [deviceCount]
         /// </summary>
-        public readonly List<double> failureRates;
+        public List<double> failureRates;
 
         /// <summary>
         /// Список интенсивностей восстановлений для соответствующих приборов: [deviceCount]
         /// </summary>
-        public readonly List<double> restoringDevice;
+        public List<double> restoringDevice;
 
         /// <summary>
         /// Нижний порог надёжности
         /// </summary>
-        public readonly double beta;
+        public double beta;
 
         /// <summary>
         /// Конструктор по умолчанию

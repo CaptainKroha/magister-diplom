@@ -12,41 +12,41 @@ namespace magisterDiplom.Model.Configuration
         /// <summary>
         /// Данная переменная устанавливаем режим отладки для всей программы
         /// </summary>
-        public readonly static bool isDebug = true;
+        public static bool isDebug = true;
 
         /// <summary>
         /// Устанавливаем количество заданий для каждого типа данных
         /// </summary>
-        public readonly int batchCount;
+        public int batchCount;
 
         /// <summary>
         /// Данная переменная определяет являются ли партии фиксированными
         /// </summary>
-        public readonly bool isFixedBatches;
+        public bool isFixedBatches;
 
         /// <summary>
         /// Данная переменная определяет количество типов данных в конвейерной системе
         /// </summary>
-        public readonly int dataTypesCount;
+        public int dataTypesCount;
 
         /// <summary>
         /// Данная переменная определяет длину конвейера, как количество приборов
         /// </summary>
-        public readonly int deviceCount;
+        public int deviceCount;
 
         /// <summary>
         /// Данная переменная представляет из себя словарь соответствия прибора к матрице переналадки. 
         /// Для каждого прибора есть матрица переналадки приборов с одного типа задания на другой.
         /// Таким образом changeoverTime = [deviceCount] : [dataTypesCount x dataTypesCount]
         /// </summary>
-        public readonly Dictionary<int, Matrix> changeoverTime = new Dictionary<int, Matrix>();
+        public Dictionary<int, int[,]> changeoverTime = new Dictionary<int, int[,]> { };
 
         /// <summary>
         /// Данная переменная представляет из себя двухмерную матрицу и используется, как матрица времени выполнения заданий.
         /// Первое измерение определяется, как количество приборов на конвейере. Второе измерения это количество
         /// типов данных. Таким образом proccessingTime = [deviceCount x dataTypesCount]
         /// </summary>
-        public readonly Matrix proccessingTime;
+        public int[,] proccessingTime;
 
         /// <summary>
         /// Конструктор по умолчанию
@@ -58,10 +58,10 @@ namespace magisterDiplom.Model.Configuration
             dataTypesCount = config.dataTypesCount;
             deviceCount = config.deviceCount;
             batchCount = config.batchCount;
-            proccessingTime = new Matrix(config.proccessingTime);
+            proccessingTime = new int[config.proccessingTime.Count, config.proccessingTime[0].Count];
             for (int i = 0; i < deviceCount; ++i)
             {
-                changeoverTime.Add(i, new Matrix(config.changeoverTime[i]));
+                changeoverTime.Add(i, ListListToArray(config.changeoverTime[i]));
             }
             isFixedBatches = config.isFixedBatches;
         }
@@ -161,10 +161,10 @@ namespace magisterDiplom.Model.Configuration
             // Выполняем инициализацию
             this.dataTypesCount = dataTypesCount;
             this.deviceCount = deviceCount;
-            this.proccessingTime = new Matrix(proccessingTime);
+            this.proccessingTime = ListListToArray(proccessingTime);
             for(int i = 0; i < deviceCount; ++i)
             {
-                this.changeoverTime.Add(i, new Matrix(changeoverTime[i]));
+                this.changeoverTime.Add(i, ListListToArray(changeoverTime[i]));
             }
             
             this.isFixedBatches = isFixedBatches;
@@ -183,41 +183,57 @@ namespace magisterDiplom.Model.Configuration
             string res = "";
 
             // Добавляем информацию о фиксированности пакетов
-            res += prefix + $"isFixedBatches: {this.isFixedBatches}" + Environment.NewLine;
+            res += prefix + $"isFixedBatches: {isFixedBatches}" + Environment.NewLine;
 
             // Добавляем информацию о количестве типов данных
-            res += prefix + $"dataTypesCount: {this.dataTypesCount}" + Environment.NewLine;
+            res += prefix + $"dataTypesCount: {dataTypesCount}" + Environment.NewLine;
 
             // Добавляем информацию о количестве приборов
-            res += prefix + $"deviceCount:    {this.deviceCount}" + Environment.NewLine;
+            res += prefix + $"deviceCount:    {deviceCount}" + Environment.NewLine;
 
             // Выполняем формирование вывода времени выполнения
             res += prefix + "proccessingTime:" + Environment.NewLine;
-            for (int device = 0; device < this.deviceCount; device++)
+            for (int device = 0; device < deviceCount; device++)
             {
                 int dataType;
                 res += prefix + prefix + $"Device {device}: " + prefix;
-                for (dataType = 0; dataType < this.dataTypesCount - 1; dataType++)
-                    res += $"{this.proccessingTime[device,dataType],-2}, ";
-                res += $"{this.proccessingTime[device, dataType]};" + Environment.NewLine;
+                for (dataType = 0; dataType < dataTypesCount - 1; dataType++)
+                    res += $"{proccessingTime[device,dataType],-2}, ";
+                res += $"{proccessingTime[device, dataType]};" + Environment.NewLine;
             }
             res += prefix + "changeoverTime:" + Environment.NewLine;
 
             // Выполняем формирование вывода времени переналадки
-            for (int device = 0; device < this.deviceCount; device++)
+            for (int device = 0; device < deviceCount; device++)
             {
                 res += prefix + prefix + $"Device {device}: " + Environment.NewLine;
-                for (int dataTypeRow = 0; dataTypeRow < this.dataTypesCount; dataTypeRow++)
+                for (int dataTypeRow = 0; dataTypeRow < dataTypesCount; dataTypeRow++)
                 {
                     int dataTypeCol;
                     res += prefix + prefix + prefix + $"Type {dataTypeRow}: " + prefix;
-                    for (dataTypeCol = 0; dataTypeCol < this.dataTypesCount - 1; dataTypeCol++)
-                        res += $"{this.changeoverTime[device][dataTypeRow, dataTypeCol],-2}, ";
-                    res += $"{this.changeoverTime[device][dataTypeRow, dataTypeCol]};" + Environment.NewLine;
+                    for (dataTypeCol = 0; dataTypeCol < dataTypesCount - 1; dataTypeCol++)
+                        res += $"{changeoverTime[device][dataTypeRow, dataTypeCol],-2}, ";
+                    res += $"{changeoverTime[device][dataTypeRow, dataTypeCol]};" + Environment.NewLine;
                 }
             }
 
             return res;
+        }
+
+        protected int[,] ListListToArray(List<List<int>> data)
+        {
+            int rows = data.Count;
+            if(rows == 0) return null;
+            int columns = data[0].Count;
+            var result = new int[rows, columns];
+            for(int i = 0; i < rows; i++)
+            {
+                for(int j = 0; j < columns; j++)
+                {
+                    result[i, j] = data[i][j];
+                }
+            }
+            return result;
         }
     }
 }

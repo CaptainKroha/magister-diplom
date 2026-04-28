@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using magisterDiplom.Model.Configuration;
+using newAlgorithm.Model;
 
 namespace newAlgorithm
 {
@@ -913,7 +914,10 @@ namespace newAlgorithm
         private void TypedPreM_ConfSave_Btn_Click(object sender, EventArgs e)
         {
             // Объявляем конфигурационную структуру данных
-            var preMConfig = TypedPreMConfiguration();
+            var config = TypedPreMConfiguration();
+
+            // Сереализируем данные
+            string jsonText = JsonConvert.SerializeObject(config, Formatting.Indented);
 
             // Открываем диалоговое окно для сохранения файла
             {
@@ -939,6 +943,56 @@ namespace newAlgorithm
         private void TypedPreM_ConfLoad_Btn_Click(object sender, EventArgs e)
         {
 
+            // Открываем диалоговое окно для открытия файла
+            {
+
+                OpenFileDialog fileDialog = new OpenFileDialog
+                {
+                    Filter = "json files (*.json)|*.json",
+                    FilterIndex = 2,
+                    RestoreDirectory = true
+                };
+
+                // Пытаемя открыть диалоговое окно
+                if (fileDialog.ShowDialog() == DialogResult.OK)
+                {
+
+                    // Читаем данные из json файла
+                    string jsonText = File.ReadAllText(fileDialog.FileName);
+
+                    // Пытаемся десереализировать данные
+                    try
+                    {
+
+                        // Десереализируем данные
+                        TypedPreMConfiguration config = JsonConvert.DeserializeObject<TypedPreMConfiguration>(jsonText);
+
+                        // Импортируем данные из конфигурационной ПТО структуры
+                        ImportTypedPreMConfiguration(config);
+
+                    // Обрабатываем ошибку десереализации
+                    }
+                    catch (JsonException ex)
+                    {
+
+                        // Выводим информационное сообщение
+                        MessageBox.Show("Указанный имеет некорректный формат.", "Ошибка");
+
+                        // Прекращяем обработку
+                        return;
+                    }
+
+                }
+                else
+                {
+
+                    // Выводим информационное сообщение
+                    MessageBox.Show("Указан некорректный файл.", "Предупреждение");
+
+                    // Прекращяем обработку
+                    return;
+                }
+            }
         }
 
         #endregion
@@ -1382,6 +1436,109 @@ namespace newAlgorithm
 
         #endregion
 
+        #region Методы обновления динамических таблиц
+        
+        private void UpdateProcessingTime()
+        {
+            // Объявляем и инициализируем количество приборов
+            int Device = Convert.ToInt32(numeric_device_count.Value);
+
+            // Объявляем и инициализируем количество типов данных
+            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
+
+            // Отчищаяем матрицу времени выполнения
+            dataGridView_processing_time.Rows.Clear();
+            dataGridView_processing_time.Columns.Clear();
+
+            // Устанавливаем количество строк и колонок для матрицы времени выполнения
+            dataGridView_processing_time.RowCount = Device;
+            dataGridView_processing_time.ColumnCount = DataType;
+
+            // Для каждого типа данных
+            for (int dataType = 0; dataType < DataType; dataType++)
+
+                // Устанавливаем заголовок строки
+                dataGridView_processing_time.Columns[dataType].HeaderCell.Value = $"Тип {dataType + 1}";
+
+            // Для каждого прибора
+            for (int device = 0; device < Device; device++)
+            {
+                // Устанавливаем заголовок строки
+                dataGridView_processing_time.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+            }
+        }
+
+        private void UpdateChangeoverTime()
+        {
+            // Объявляем и инициализируем количество приборов
+            int Device = Convert.ToInt32(numeric_device_count.Value);
+
+            // Объявляем и инициализируем количество типов данных
+            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
+
+            // Отчищаяем матрицу времени переналадки
+            dataGridView_changeover_time.Rows.Clear();
+            dataGridView_changeover_time.Columns.Clear();
+
+            // Устанавливаем количество строк и колонок для матрицы времени переналадки
+            dataGridView_changeover_time.RowCount = Device * DataType;
+            dataGridView_changeover_time.ColumnCount = DataType;
+
+            // Для каждой строки
+            for (int deviceAndDataType = 0; deviceAndDataType < Device * DataType; deviceAndDataType++)
+
+                // Устанавливаем заголовок строки
+                dataGridView_changeover_time.Rows[deviceAndDataType].HeaderCell.Value = $"Тип {(deviceAndDataType % DataType) + 1}";
+
+            // Для каждого столбца
+            for (int dataType = 0; dataType < DataType; dataType++)
+
+                // Устанавливаем заголовок строки
+                dataGridView_changeover_time.Columns[dataType].HeaderCell.Value = $"Тип {dataType + 1}";
+        }
+
+        private void UpdateDevicePremTypeDGV(DataGridView dataGridView)
+        {
+            int deviceCount = (int)numeric_device_count.Value;
+            int preMTypeCount = (int)numeric_preM_types_count.Value;
+
+            dataGridView.Rows.Clear();
+            dataGridView.Columns.Clear();
+
+            dataGridView.RowCount = deviceCount;
+            dataGridView.ColumnCount = preMTypeCount;
+
+            if (deviceCount == 0 || preMTypeCount == 0)
+            {
+                return;
+            }
+
+            for (int device = 0; device < deviceCount; device++)
+            {
+                dataGridView.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+                for (int preMType = 0; preMType < preMTypeCount; preMType++)
+                {
+                    dataGridView.Columns[preMType].HeaderCell.Value = $"Тип ПТО {preMType + 1}";
+                    dataGridView.Rows[device].Cells[preMType].Value = 0;
+                }
+            }
+        }
+
+        private void UpdatePreMaintenceGeneralDGV()
+        {
+            int deviceCount = (int)numeric_device_count.Value;
+
+            dataGridView_preM_general.Rows.Clear();
+            dataGridView_preM_general.RowCount = deviceCount;
+
+            for (int device = 0; device < deviceCount; device++)
+            {
+                dataGridView_preM_general.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
+            }
+        }
+
+        #endregion
+
         #region Вспомогательные функции
 
         /// <summary>
@@ -1514,6 +1671,8 @@ namespace newAlgorithm
 
         #endregion
 
+        #region Загрузка/выгрузка матриц
+
         /// <summary>
         /// Установим матрицу времени выполнения заданий
         /// </summary>
@@ -1521,38 +1680,30 @@ namespace newAlgorithm
         private void SetProcessingTime(List<List<int>> processingTime)
         {
 
-            // Объявляем и инициализируем количество приборов
-            int Device = Convert.ToInt32(numeric_device_count.Value);
+            UpdateProcessingTime();
 
-            // Объявляем и инициализируем количество типов данных
-            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
-
-            // Отчищаяем матрицу времени выполнения
-            dataGridView_processing_time.Rows.Clear();
-            dataGridView_processing_time.Columns.Clear();
-
-            // Устанавливаем количество строк и колонок для матрицы времени выполнения
-            dataGridView_processing_time.RowCount = Device;
-            dataGridView_processing_time.ColumnCount = DataType;
-
-            // Для каждого типа данных
-            for (int dataType = 0; dataType < DataType; dataType++)
-
-                // Устанавливаем заголовок строки
-                dataGridView_processing_time.Columns[dataType].HeaderCell.Value = $"Тип {dataType + 1}";
-
-            // Для каждого прибора
-            for (int device = 0; device < Device; device++)
+            for (int device = 0; device < processingTime.Count; device++)
             {
+                for (int dataType = 0; dataType < processingTime[0].Count; dataType++)
 
-                // Устанавливаем заголовок строки
-                dataGridView_processing_time.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
-
-                // Для каждого типа данных
-                for (int dataType = 0; dataType < DataType; dataType++)
-
-                    // Устанавливаем значение матрицы времени выполнения
                     dataGridView_processing_time.Rows[device].Cells[dataType].Value = processingTime[device][dataType];
+            }
+        }
+
+        /// <summary>
+        /// Установим матрицу времени выполнения заданий
+        /// </summary>
+        /// <param name="processingTime">Матрица времени выполнения заданий</param>
+        private void SetProcessingTime(int[,] processingTime)
+        {
+
+            UpdateProcessingTime();
+
+            for (int device = 0; device < processingTime.GetLength(0); device++)
+            {
+                for (int dataType = 0; dataType < processingTime.GetLength(1); dataType++)
+
+                    dataGridView_processing_time.Rows[device].Cells[dataType].Value = processingTime[device, dataType];
             }
         }
 
@@ -1596,43 +1747,21 @@ namespace newAlgorithm
         private void SetChangeoverTime(List<List<List<int>>> changeoverTime)
         {
 
-            // Объявляем и инициализируем количество приборов
-            int Device = Convert.ToInt32(numeric_device_count.Value);
+            UpdateChangeoverTime();
 
-            // Объявляем и инициализируем количество типов данных
-            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
-
-            // Отчищаяем матрицу времени переналадки
-            dataGridView_changeover_time.Rows.Clear();
-            dataGridView_changeover_time.Columns.Clear();
-
-            // Устанавливаем количество строк и колонок для матрицы времени переналадки
-            dataGridView_changeover_time.RowCount = Device * DataType;
-            dataGridView_changeover_time.ColumnCount = DataType;
-            
-            // Для каждой строки
-            for (int deviceAndDataType = 0; deviceAndDataType < Device * DataType; deviceAndDataType++)
-
-                // Устанавливаем заголовок строки
-                dataGridView_changeover_time.Rows[deviceAndDataType].HeaderCell.Value = $"Тип {(deviceAndDataType % DataType)+1}";
-
-            // Для каждого столбца
-            for (int dataType = 0; dataType < DataType; dataType++)
-
-                // Устанавливаем заголовок строки
-                dataGridView_changeover_time.Columns[dataType].HeaderCell.Value = $"Тип {dataType + 1}";
+            int dataTypesCount = changeoverTime[0].Count;
 
             // Для каждого прибора
-            for (int device = 0; device < Device; device++)
+            for (int device = 0; device < changeoverTime.Count; device++)
             
                 // Для каждого типа данных
-                for (int fromDataType = 0; fromDataType < DataType; fromDataType++)
+                for (int fromDataType = 0; fromDataType < dataTypesCount; fromDataType++)
 
                     // Для каждого типа данных
-                    for (int toDataType = 0; toDataType < DataType; toDataType++)
+                    for (int toDataType = 0; toDataType < dataTypesCount; toDataType++)
 
                         // Устанавливаем значение матрицы времени переналадки
-                        dataGridView_changeover_time.Rows[device * DataType + fromDataType].Cells[toDataType].Value = changeoverTime[device][fromDataType][toDataType];
+                        dataGridView_changeover_time.Rows[device * dataTypesCount + fromDataType].Cells[toDataType].Value = changeoverTime[device][fromDataType][toDataType];
         }
 
         /// <summary>
@@ -1641,44 +1770,40 @@ namespace newAlgorithm
         /// <param name="changeoverTime">Матрица времени переналадки</param>
         private void SetChangeoverTime(Dictionary<int, List<List<int>>> changeoverTime)
         {
+            UpdateChangeoverTime();
 
-            // Объявляем и инициализируем количество приборов
-            int Device = Convert.ToInt32(numeric_device_count.Value);
-
-            // Объявляем и инициализируем количество типов данных
-            int DataType = Convert.ToInt32(numeric_data_types_count.Value);
-
-            // Отчищаяем матрицу времени переналадки
-            dataGridView_changeover_time.Rows.Clear();
-            dataGridView_changeover_time.Columns.Clear();
-
-            // Устанавливаем количество строк и колонок для матрицы времени переналадки
-            dataGridView_changeover_time.RowCount = Device * DataType;
-            dataGridView_changeover_time.ColumnCount = DataType;
-
-            // Для каждой строки
-            for (int deviceAndDataType = 0; deviceAndDataType < Device * DataType; deviceAndDataType++)
-
-                // Устанавливаем заголовок строки
-                dataGridView_changeover_time.Rows[deviceAndDataType].HeaderCell.Value = $"Тип {(deviceAndDataType % DataType) + 1}";
-
-            // Для каждого столбца
-            for (int dataType = 0; dataType < DataType; dataType++)
-
-                // Устанавливаем заголовок строки
-                dataGridView_changeover_time.Columns[dataType].HeaderCell.Value = $"Тип {dataType + 1}";
+            int dataTypesCount = changeoverTime[0].Count;
 
             // Для каждого прибора
-            for (int device = 0; device < Device; device++)
+            for (int device = 0; device < changeoverTime.Count; device++)
 
                 // Для каждого типа данных
-                for (int fromDataType = 0; fromDataType < DataType; fromDataType++)
+                for (int fromDataType = 0; fromDataType < dataTypesCount; fromDataType++)
 
                     // Для каждого типа данных
-                    for (int toDataType = 0; toDataType < DataType; toDataType++)
+                    for (int toDataType = 0; toDataType < dataTypesCount; toDataType++)
 
                         // Устанавливаем значение матрицы времени переналадки
-                        dataGridView_changeover_time.Rows[device * DataType + fromDataType].Cells[toDataType].Value = changeoverTime[device][fromDataType][toDataType];
+                        dataGridView_changeover_time.Rows[device * dataTypesCount + fromDataType].Cells[toDataType].Value = changeoverTime[device][fromDataType][toDataType];
+        }
+
+        private void SetChangeoverTime(Dictionary<int, int[,]> data)
+        {
+            UpdateChangeoverTime();
+
+            int dataTypesCount = data[0].GetLength(0);
+
+            // Для каждого прибора
+            for (int device = 0; device < data.Count; device++)
+
+                // Для каждого типа данных
+                for (int fromDataType = 0; fromDataType < dataTypesCount; fromDataType++)
+
+                    // Для каждого типа данных
+                    for (int toDataType = 0; toDataType < dataTypesCount; toDataType++)
+
+                        // Устанавливаем значение матрицы времени переналадки
+                        dataGridView_changeover_time.Rows[device * dataTypesCount + fromDataType].Cells[toDataType].Value = data[device][fromDataType, toDataType];
         }
 
         /// <summary>
@@ -1906,93 +2031,42 @@ namespace newAlgorithm
             return failureRates;
         }
 
-        private void SetPreMaintenceDurations(List<List<int>> data)
-        {
-            SetDevicePremTypeDGV(dataGridView_preMDuration, data);
-        }
-
-        private List<List<int>> GetPreMaintenceDurations()
+        private int[,] GetPreMaintenceDurations()
         {
             return GetDevicePremTypeDGV(dataGridView_preMDuration);
         }
 
-        private void SetPreMaintenceCosts(List<List<int>> data)
-        {
-            SetDevicePremTypeDGV(dataGridView_preMCosts, data);
-        }
-
-        private List<List<int>> GetPreMaintenceCosts()
+        private int[,] GetPreMaintenceCosts()
         {
             return GetDevicePremTypeDGV(dataGridView_preMCosts);
         }
 
-        private void UpdateDevicePremTypeDGV(DataGridView dataGridView)
-        {
-            int deviceCount = (int) numeric_device_count.Value;
-            int preMTypeCount = (int) numeric_preM_types_count.Value;
-
-            dataGridView.Rows.Clear();
-            dataGridView.Columns.Clear();
-
-            dataGridView.RowCount = deviceCount;
-            dataGridView.ColumnCount = preMTypeCount;
-
-            if(deviceCount == 0 || preMTypeCount == 0)
-            {
-                return;
-            }
-
-            for (int device = 0; device < deviceCount; device++)
-            {
-                dataGridView.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
-                for (int preMType = 0; preMType < preMTypeCount; preMType++)
-                {
-                    dataGridView.Columns[preMType].HeaderCell.Value = $"Тип ПТО {preMType + 1}";
-                    dataGridView.Rows[device].Cells[preMType].Value = 0;
-                }
-            }
-        }
-
-        private void SetDevicePremTypeDGV(DataGridView dataGridView, List<List<int>> data)
+        private void SetDevicePremTypeDGV(DataGridView dataGridView, int[,] data)
         {
             UpdateDevicePremTypeDGV(dataGridView);
 
             //TODO: проверка на соответствие размерностей матриц
 
-            for (int device = 0; device < data.Count; device++)
+            for (int device = 0; device < data.GetLength(0); device++)
             {
-                for (int preMType = 0; preMType < data[0].Count; preMType++)
+                for (int preMType = 0; preMType < data.GetLength(1); preMType++)
                 {
-                    dataGridView.Rows[device].Cells[preMType].Value = data[device][preMType];
+                    dataGridView.Rows[device].Cells[preMType].Value = data[device, preMType];
                 }
             }
         }
 
-        private List<List<int>> GetDevicePremTypeDGV(DataGridView dataGridView)
+        private int[,] GetDevicePremTypeDGV(DataGridView dataGridView)
         {
-            var result = new List<List<int>>(dataGridView.RowCount);
+            var result = new int[dataGridView.RowCount, dataGridView.ColumnCount];
             for (int device = 0; device < dataGridView.RowCount; device++)
             {
-                result.Add(new List<int>(dataGridView.ColumnCount));
                 for (int preMType = 0; preMType < dataGridView.ColumnCount; preMType++)
                 {
-                    result[device].Add(Convert.ToInt32(dataGridView.Rows[device].Cells[preMType].Value));
+                    result[device, preMType] = Convert.ToInt32(dataGridView.Rows[device].Cells[preMType].Value);
                 }
             }
             return result;
-        }
-        
-        private void UpdatePreMaintenceGeneralDGV()
-        {
-            int deviceCount = (int) numeric_device_count.Value;
-
-            dataGridView_preM_general.Rows.Clear();
-            dataGridView_preM_general.RowCount = deviceCount;
-
-            for (int device = 0; device < deviceCount; device++)
-            {
-                dataGridView_preM_general.Rows[device].HeaderCell.Value = $"Прибор {device + 1}";
-            }
         }
 
         private void SetPreMaintenceGeneral(List<List<int>> data)
@@ -2020,6 +2094,8 @@ namespace newAlgorithm
                 dataGridView_preM_general.Rows[device].Cells[inactionCostColumnIndex].Value = data[device];
             }
         }
+
+        #endregion
 
         /// <summary>
         /// Импортируем данные из конфигурационной структуры
@@ -2079,6 +2155,78 @@ namespace newAlgorithm
         }
 
         /// <summary>
+        /// Импортируем данные из конфигурационной структуры
+        /// </summary>
+        /// <param name="config">Конфигурационная структура</param>
+        /// <returns>True - если импорт был успешен и False иначе </returns>
+        private bool ImportFromConfig(Configuration config)
+        {
+
+            // Устанавливаем размер буфера
+            this.numeric_data_types_count.Value = config.dataTypesCount;
+
+            // Устанавливаем количество приборов
+            this.numeric_device_count.Value = config.deviceCount;
+
+            // Устанавливаем количества заданий для каждого типа
+            this.numeric_batch_count.Value = config.batchCount;
+
+            // Устнавливаем матрицу времени выполнения
+            SetProcessingTime(config.proccessingTime);
+
+            // Устнавливаем матрицу времени переналадки
+            SetChangeoverTime(config.changeoverTime);
+
+            // Вернём флаг успешной загрузки данных
+            return true;
+        }
+
+        /// <summary>
+        /// Импортируем данные из конфигурационной ПТО структуры
+        /// </summary>
+        /// <param name="preMConfig">Конфигурационная ПТО структура</param>
+        /// <returns>True - если импорт был успешен и False иначе </returns>
+        private bool ImportFromPreMConfig(PreMConfiguration config)
+        {
+
+            // Импортируем данные из конфигурационной структуры
+            ImportFromConfig(config);
+
+            // Устанавливаем вектор интенсивности отказов
+            SetFailureRates(config.failureRates);
+
+            // Устанавливаем вектор интенсивности восстановления
+            SetRestoringDevice(config.restoringDevice);
+
+            // Устанавливаем вектор длительности ПТО
+            SetPreMaintenanceTimes(config.preMaintenanceTimes);
+
+            // Устанавливаем значение beta
+            this.betaValue.Text = config.beta.ToString();
+
+            // Вернём флаг успешной загрузки данных
+            return true;
+        }
+
+        private bool ImportTypedPreMConfiguration(TypedPreMConfiguration config)
+        {
+            ImportFromPreMConfig(config);
+
+            numeric_preM_types_count.Value = config.PreMaintenceTypesCount;
+
+            SetDevicePremTypeDGV(dataGridView_preMDuration, config.PreMaintenanceDurations);
+            SetDevicePremTypeDGV(dataGridView_preMCosts, config.PreMaintenanceCosts);
+
+            var preMGeneralData = new List<List<int>>();
+            preMGeneralData.Add(config.InactionCosts);
+
+            SetPreMaintenceGeneral(preMGeneralData);
+
+            return true;
+
+        }
+
+        /// <summary>
         /// Функция вернёт конфигурационную структуру
         /// </summary>
         /// <returns>Конфигурационная структура</returns>
@@ -2123,8 +2271,8 @@ namespace newAlgorithm
             {
                 InactionCosts = GetInactionCosts(),
                 PreMaintenceTypesCount = (int)numeric_preM_types_count.Value,
-                PreMaintenanceCosts = new Model.Matrix(GetPreMaintenceCosts()),
-                PreMaintenanceDurations = new Model.Matrix(GetPreMaintenceDurations())
+                PreMaintenanceCosts = GetPreMaintenceCosts(),
+                PreMaintenanceDurations = GetPreMaintenceDurations()
             };
             return config;
 

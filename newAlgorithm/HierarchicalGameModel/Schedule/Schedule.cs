@@ -1,8 +1,10 @@
 ﻿using magisterDiplom.Model;
 using magisterDiplom.Model.Configuration;
-using System.Linq;
+using newAlgorithm;
 using newAlgorithm.Model;
 using System.Collections.Generic;
+using System.Linq;
+using Batch = magisterDiplom.Model.Batch;
 
 namespace magisterDiplom
 {
@@ -202,6 +204,11 @@ namespace magisterDiplom
         protected int JobCompletionTime(int device, int batch, int job)
         {
             return startProcessing[device][batch][job] + config.proccessingTime[device, schedule[batch].Type];
+        }
+
+        protected int ChangeoverDuration(int device, int fromBatch, int toBatch)
+        {
+            return config.changeoverTime[device][schedule[fromBatch].Type, schedule[toBatch].Type];
         }
 
     }

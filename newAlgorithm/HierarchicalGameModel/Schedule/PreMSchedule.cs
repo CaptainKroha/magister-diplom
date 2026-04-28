@@ -178,7 +178,7 @@ namespace magisterDiplom.Fabric
             int device = 0, batch = 0, job = 0;
 
             // Устанавливаем момент начала времени выполнения 1 задания в 1 пакете на 1 приборе, как наладку
-            startProcessing[device][batch][job] = config.changeoverTime[device][schedule[batch].Type, schedule[batch].Type];
+            startProcessing[device][batch][job] = ChangeoverDuration(device, batch, batch);
 
             for (job = 1; job < schedule[batch].Size; job++)
             {
@@ -195,18 +195,13 @@ namespace magisterDiplom.Fabric
                 // Момент начала времени выполнения 1 задания в пакете на позиции batch
                 startProcessing[device][batch][job] =
 
-                    // Момент начала времени выполнения последнего задания в предыдущем пакете
-                    startProcessing[device][batch - 1].Last() +
-
-                    // Время выполнения задания в предыдущем пакете
-                    config.proccessingTime[device, schedule[batch - 1].Type] +
+                    CompletionTimeLastJobOfBatch(device, batch - 1) +
 
                     // Время переналадки с предыдущего типа на текущий
-                    config.changeoverTime[device][schedule[batch - 1].Type, schedule[batch].Type] +
+                    ChangeoverDuration(device, batch - 1, batch) +
 
                     // Время выполнения ПТО после предыдущего ПЗ
                     PreMaintanceDurationAfter(device, batch -  1); ;
-                    //PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[0];
 
                 for (job = 1; job < schedule[batch].Size; job++)
                 { 
@@ -225,7 +220,7 @@ namespace magisterDiplom.Fabric
             startProcessing[device][batch][job] = Math.Max(
 
                 // Время наладки прибора на выполнение 1 задания в 1 пакете
-                config.changeoverTime[device][schedule[batch].Type, schedule[batch].Type],
+                ChangeoverDuration(device, batch, batch),
 
                 // Время окончания выполнения 1 задания в 1 пакете на предыдущем приборе
                 JobCompletionTime(device - 1, batch, job)
@@ -254,24 +249,15 @@ namespace magisterDiplom.Fabric
                 // и временем окончания выполнения 1 задания в пакете на в batchIndex на предыдущем приборе
                 startProcessing[device][batch][job] = Math.Max(
 
-                    // Момент начала времени выполнения последнего задания в предыдущем ПЗ
-                    startProcessing[device][batch - 1].Last() +
-
-                    // Время выполнения последнего задания в предыдущем ПЗ
-                    config.proccessingTime[device, schedule[batch - 1].Type] +
+                    CompletionTimeLastJobOfBatch(device, batch - 1) +
 
                     // Время переналадки с предыдущего типа на текущий
-                    config.changeoverTime[device][schedule[batch - 1].Type, schedule[batch].Type] +
+                    ChangeoverDuration(device, batch - 1, batch) +
 
                     // Время выполнения ПТО
                     PreMaintanceDurationAfter(device, batch - 1),
-                    //PreMaintenceStatusAfter(device, batch - 1) * config.preMaintenanceTimes[device],
 
-                    // Момент начала времени выполнения 1 задания на предыдущем приборе
-                    startProcessing[device - 1][batch][job] +
-
-                    // Время выполнения 1 задания на предыдущем приборе
-                    config.proccessingTime[device - 1, schedule[batch].Type]);
+                    JobCompletionTime(device - 1, batch, job));
 
                 // Пробегаемся по всем возможным заданиям пакета в позиции batchIndex
                 for (job = 1; job < schedule[batch].Size; job++)

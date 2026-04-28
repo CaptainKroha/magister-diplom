@@ -9,9 +9,11 @@ namespace magisterDiplom.Model.Configuration
 
         public List<int> InactionCosts { get; set; }
 
-        public Matrix PreMaintenanceCosts { get; set; }
+        public int[,] PreMaintenanceCosts { get; set; }
 
-        public Matrix PreMaintenanceDurations { get; set; }
+        public int[,] PreMaintenanceDurations { get; set; }
+
+        public TypedPreMConfiguration() { }
 
         public TypedPreMConfiguration(PreMConfig preMConfig) : base(preMConfig) { }
 

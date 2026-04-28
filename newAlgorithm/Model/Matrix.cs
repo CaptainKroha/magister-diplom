@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace newAlgorithm.Model
 {
@@ -9,7 +10,6 @@ namespace newAlgorithm.Model
     /// </summary>
     public class Matrix
     {
-
         private readonly int[,] _data;
 
         /// <summary>
