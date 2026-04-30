@@ -303,9 +303,11 @@ namespace magisterDiplom.Fabric
         /// </summary>
         protected MatrixY _matrixY;
 
-        #region Программный интерфейс
+        public SimplePreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger)
+        {
+        }
 
-        public SimplePreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger) { }
+        #region Программный интерфейс
 
         public override void Update(int batchesCount)
         {

@@ -988,8 +988,7 @@
             this.betaValue.Name = "betaValue";
             this.betaValue.Size = new System.Drawing.Size(71, 20);
             this.betaValue.TabIndex = 31;
-            this.betaValue.Text = "0.93";
-            this.betaValue.TextChanged += new System.EventHandler(this.betaValue_TextChanged);
+            this.betaValue.Text = "0,93";
             // 
             // label15
             // 

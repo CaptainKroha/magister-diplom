@@ -176,41 +176,41 @@ namespace magisterDiplom.Model.Configuration
         /// </summary>
         /// <param name="prefix">Префикс для формированного вывода</param>
         /// <returns>Результирующая строка со всей необходимой информацией</returns>
-        public string ToString(string prefix = "\t")
+        public override string ToString()
         {
 
             // Результирующая информация
             string res = "";
 
             // Добавляем информацию о фиксированности пакетов
-            res += prefix + $"isFixedBatches: {isFixedBatches}" + Environment.NewLine;
+            res += $"isFixedBatches: {isFixedBatches}" + Environment.NewLine;
 
             // Добавляем информацию о количестве типов данных
-            res += prefix + $"dataTypesCount: {dataTypesCount}" + Environment.NewLine;
+            res += $"dataTypesCount: {dataTypesCount}" + Environment.NewLine;
 
             // Добавляем информацию о количестве приборов
-            res += prefix + $"deviceCount:    {deviceCount}" + Environment.NewLine;
+            res += $"deviceCount:    {deviceCount}" + Environment.NewLine;
 
             // Выполняем формирование вывода времени выполнения
-            res += prefix + "proccessingTime:" + Environment.NewLine;
+            res += "proccessingTime:" + Environment.NewLine;
             for (int device = 0; device < deviceCount; device++)
             {
                 int dataType;
-                res += prefix + prefix + $"Device {device}: " + prefix;
+                res += $"Device {device}: ";
                 for (dataType = 0; dataType < dataTypesCount - 1; dataType++)
                     res += $"{proccessingTime[device,dataType],-2}, ";
                 res += $"{proccessingTime[device, dataType]};" + Environment.NewLine;
             }
-            res += prefix + "changeoverTime:" + Environment.NewLine;
+            res += "changeoverTime:" + Environment.NewLine;
 
             // Выполняем формирование вывода времени переналадки
             for (int device = 0; device < deviceCount; device++)
             {
-                res += prefix + prefix + $"Device {device}: " + Environment.NewLine;
+                res += $"Device {device}: " + Environment.NewLine;
                 for (int dataTypeRow = 0; dataTypeRow < dataTypesCount; dataTypeRow++)
                 {
                     int dataTypeCol;
-                    res += prefix + prefix + prefix + $"Type {dataTypeRow}: " + prefix;
+                    res += $"Type {dataTypeRow}: ";
                     for (dataTypeCol = 0; dataTypeCol < dataTypesCount - 1; dataTypeCol++)
                         res += $"{changeoverTime[device][dataTypeRow, dataTypeCol],-2}, ";
                     res += $"{changeoverTime[device][dataTypeRow, dataTypeCol]};" + Environment.NewLine;

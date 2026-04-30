@@ -1402,35 +1402,7 @@ namespace newAlgorithm
         {
             UpdateDevicePremTypeDGV(dataGridView_preMDuration);
             UpdateDevicePremTypeDGV(dataGridView_preMCosts);
-        }
-
-        /// <summary>
-        /// Функция управляет значением нижнего порога надёжности
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void betaValue_TextChanged(object sender, EventArgs e)
-        {
-
-            // Преобразуем входные данные в число типа Double
-            double.TryParse(betaValue.Text, out double beta);
-
-            // Если beta будет больше 1
-            if (beta > (double)1.0)
-            {
-                MessageBox.Show("Ошибка. Значение beta не может быть больше 1");
-                betaValue.Text = (0.9999).ToString();
-                return;
-            }
-
-            // Если beta будет меньше 0
-            if (beta < (double)0.0)
-            {
-                MessageBox.Show("Ошибка. Значение beta не может быть меньше 0");
-                betaValue.Text = (0.0001).ToString();
-                return;
-            }
-        }
+        }     
 
         #endregion
 

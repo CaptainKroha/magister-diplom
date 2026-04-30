@@ -47,15 +47,15 @@ namespace magisterDiplom.Fabric
         /// </summary>
         private protected readonly new PreMConfiguration config;
 
-        protected PreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger)
-        {
-            config = configuration;
-        }
-
         /// <summary>
         /// Матрица моментов времени окончания ПТО приборов
         /// </summary>
         protected List<List<PreMSet>> matrixTPM = new List<List<PreMSet>>();
+
+        public PreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger)
+        {
+            config = configuration;
+        }
 
         public override void Add(int dataType, int size)
         {
@@ -68,28 +68,26 @@ namespace magisterDiplom.Fabric
                 OptimizeLocaly(5);
             }
             
-            if (schedule.Capacity != ScheduleSize())
-            {
-                AddPreMaintenceAfterLastBatch();
-            }  
+            AddPreMaintenceAfterLastBatch();
         }
 
         protected bool SolutionUnacceptable()
         {
+
             for (int device = 0; device < config.deviceCount; device++)
             {   
                 for (int batch = 0; batch < ScheduleSize(); batch++)
                 {
                     int time = CompletionTimeLastJobOfBatch(device, batch);
+                    double systemReliability = SystemReliabilityBy(time);
 
                     // Проверяем ограничение надёжности
-                    if (SystemReliabilityBy(time) < config.beta)
+                    if (systemReliability < config.beta)
                     {
                         return true;
                     }
                 }
             }
-                    
 
             return false;
         }
@@ -166,7 +164,7 @@ namespace magisterDiplom.Fabric
         protected double SystemReliabilityBy(int time)
         {
             double result = 1;
-            for (int device = 0; device < config.deviceCount - 1; device++)
+            for (int device = 0; device < config.deviceCount; device++)
             {
                 result *= DeviceReliabilityBy(device, time);
             }
@@ -303,7 +301,7 @@ namespace magisterDiplom.Fabric
         {
             var result = 0;
 
-            for (int job = 1; job < schedule[batch].Size; ++job)
+            for (int job = 1; job < BatchSize(batch); ++job)
             {
                 result += startProcessing[device][batch][job] - JobCompletionTime(device, batch, job - 1);
             }

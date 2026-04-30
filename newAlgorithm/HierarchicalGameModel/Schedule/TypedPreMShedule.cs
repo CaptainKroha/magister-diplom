@@ -53,11 +53,25 @@ namespace magisterDiplom.Fabric
 
         public override void Optimize()
         {
-            OptimizeByDeletePreMaintences();
-            if (success)
+            Y_l[config.deviceCount - 1].UnsetPreMaintence(0, ScheduleSize() - 1);
+            Calculate();
+
+            _logger.Print("Матрицы Y_l перед оптимизацией");
+            for (int i = 0; i < Y_l.Length; i++)
             {
-                OptimizeByChangePreMaintencesType();
+                _logger.Print($"Y_{i + 1}", Y_l[i].ToListList());
             }
+
+            success = true;
+            if (SolutionUnacceptable())
+            {
+                _logger.Print("-=-=-Решение недопустимо-=-=-");
+                success = false;
+                return;
+            }
+
+            OptimizeByDeletePreMaintences();
+            OptimizeByChangePreMaintencesType();
                
         }
 
@@ -137,18 +151,13 @@ namespace magisterDiplom.Fabric
 
         protected void OptimizeByDeletePreMaintences()
         {
-            success = true;
-            Calculate();
-            if (SolutionUnacceptable())
-            {
-                success = false;
-                return;
-            }
+            _logger.Print("-=-=-Оптимизация количества ПТО-=-=-");
 
             for (int batch = 0; batch < ScheduleSize() - 1; batch++)
             {
                 for (int device = 0; device < config.deviceCount; device++)
                 {
+                    _logger.Print($"Попытка убрать ПТО: device {device + 1}, batch {batch + 1}");
                     Y_l[device].UnsetPreMaintence(0, batch);
                     Calculate();
                     if (SolutionUnacceptable())
@@ -157,12 +166,13 @@ namespace magisterDiplom.Fabric
                     }
                 }
             }
+            _logger.Print("-=-=-Конец-=-=-");
         }
 
         protected void OptimizeByChangePreMaintencesType()
         {
 
-            _logger.Debug("-=-=-Оптимизация типов ПТО-=-=-");
+            _logger.Print("-=-=-Оптимизация типов ПТО-=-=-");
 
             int[] w_l = new int[config.deviceCount];
             int[] j_l = new int[config.deviceCount];
@@ -183,7 +193,7 @@ namespace magisterDiplom.Fabric
 
             while (true)
             {
-                _logger.Print($"Iteration {s}");
+                _logger.Print($"Итерация {s}");
 
                 int zero_prem_left = 0;
                 for (int device = 0; device < config.deviceCount; ++device)
@@ -226,8 +236,7 @@ namespace magisterDiplom.Fabric
                         Y_l[device_max_grad].UnsetPreMaintence(w_l[device_max_grad], j_l[device_max_grad]);
                         Y_l[device_max_grad].SetPreMaintence(w_l[device_max_grad] + k_l, j_l[device_max_grad]);
                         w_l[device_max_grad] += k_l;
-                        _logger.Print("Upgrade found");
-                        _logger.Print("w_l:", w_l);
+                        _logger.Print($"Best G: {G}, w_l:", w_l);
                         break;
                     }
                     else
@@ -247,7 +256,7 @@ namespace magisterDiplom.Fabric
                             {
                                 Y_l[device].UnsetPreMaintence(w_l[device], j_l[device]);
                                 Y_l[device].SetPreMaintence(w_l[device] + k_l, j_l[device]);
-                                _logger.Print($"Device: {device}; [{w_l[device]}, {j_l[device]}] -> [{w_l[device] + k_l}, {j_l[device]}]");
+                                _logger.Print($"Device: {device + 1}; [{w_l[device]}, {j_l[device]}] -> [{w_l[device] + k_l}, {j_l[device]}]");
 
                                 Calculate();
                                 if (!SolutionUnacceptable())
@@ -264,14 +273,14 @@ namespace magisterDiplom.Fabric
                                 }
                                 else
                                 {
-                                    _logger.Print("Solution unacceptable");
+                                    _logger.Print("-=-=-Решение недопустимо-=-=-");
                                 }
                                 Y_l[device].UnsetPreMaintence(w_l[device] + k_l, j_l[device]);
                                 Y_l[device].SetPreMaintence(w_l[device], j_l[device]);
                             }
                             else
                             {
-                                _logger.Print($"Device {device} left");
+                                _logger.Print($"Прибор {device + 1} исключен из рассмотрения");
                                 PM_l[device].Remove(j_l[device]);
                             }
                         }
@@ -280,6 +289,8 @@ namespace magisterDiplom.Fabric
 
                 s++;
             }
+            
+            _logger.Print("-=-=-Конец-=-=-");
 
         }
 

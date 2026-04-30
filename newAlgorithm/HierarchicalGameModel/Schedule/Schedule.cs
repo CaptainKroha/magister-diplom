@@ -82,13 +82,6 @@ namespace magisterDiplom
         /// Конфигурационная структура содержащая информацию о конвейерной системе
         /// </summary>
         private protected Configuration config;
-
-        protected Schedule(Configuration configuration, ILogger logger)
-        {
-            config = configuration;
-            _logger = logger;
-        }
-
         protected List<Batch> schedule;
 
         protected bool success;
@@ -99,6 +92,13 @@ namespace magisterDiplom
         protected Dictionary<int, List<List<int>>> startProcessing = new Dictionary<int, List<List<int>>>();
 
         protected readonly ILogger _logger;
+
+        public Schedule(Configuration configuration, ILogger logger)
+        {
+            config = configuration;
+            _logger = logger;
+            _logger.Print(configuration.ToString());
+        }
 
         public int MakeSpan
         {

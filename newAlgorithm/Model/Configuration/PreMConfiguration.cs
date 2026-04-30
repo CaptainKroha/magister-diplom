@@ -140,34 +140,34 @@ namespace magisterDiplom.Model.Configuration
         /// </summary>
         /// <param name="prefix">Префикс для формированного вывода</param>
         /// <returns>Результирующая строка со всей необходимой информацией</returns>
-        public new string ToString(string prefix = "\t")
+        public override string ToString()
         {
 
-            string res = base.ToString(prefix);
+            string res = base.ToString();
 
             // Объявляем индекс прибора
             int device;
 
             // Выполняем формирование строки времени ПТО
-            res += prefix + "preMaintenanceTimes: [";
+            res += "preMaintenanceTimes: [";
             for (device = 0; device < this.deviceCount - 1; device++)
-                res += $"{this.preMaintenanceTimes[device]}, ";
-            res += $"{this.preMaintenanceTimes[device]}];" + Environment.NewLine;
+                res += $"{preMaintenanceTimes[device]}, ";
+            res += $"{preMaintenanceTimes[device]}];" + Environment.NewLine;
 
             // Выполняем формирование строки интенсивности востановления приборов
-            res += prefix + "restoringDevice: [";
+            res += "restoringDevice: [";
             for (device = 0; device < this.deviceCount - 1; device++)
-                res += $"{this.restoringDevice[device]}, ";
-            res += $"{this.restoringDevice[device]}];" + Environment.NewLine;
+                res += $"{restoringDevice[device]}, ";
+            res += $"{restoringDevice[device]}];" + Environment.NewLine;
 
             // Выполняем формирование строки интенсивности отказов приборов
-            res += prefix + "failureRates: [";
+            res += "failureRates: [";
             for (device = 0; device < this.deviceCount - 1; device++)
-                res += $"{this.failureRates[device]}, ";
-            res += $"{this.failureRates[device]}];" + Environment.NewLine;
+                res += $"{failureRates[device]}, ";
+            res += $"{failureRates[device]}];" + Environment.NewLine;
 
             // Выполняем формирование строки нижнего порога надёжности
-            res += prefix + $"beta: {beta};" + Environment.NewLine;
+            res += $"beta: {beta};" + Environment.NewLine;
 
             // Возвращяем результат
             return res;

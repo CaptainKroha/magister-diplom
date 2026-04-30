@@ -10,7 +10,7 @@ namespace magisterDiplom.Utils
     public class FileLogger : ILogger
     {
 
-        private readonly StreamWriter _writer;
+        private StreamWriter _writer;
         private readonly object _lock = new object();
 
         public FileLogger(string filename)
@@ -21,10 +21,13 @@ namespace magisterDiplom.Utils
             };
         }
 
-        void ILogger.Debug(string message) => Log("DEBUG", message);
-        void ILogger.Info(string message) => Log("INFO", message);
-        void ILogger.Warning(string message) => Log("WARNING", message);
-        void ILogger.Error(string message) => Log("ERROR", message);
+        public void SetLogFile(string filename)
+        {
+            _writer = new StreamWriter(filename, append: true, Encoding.UTF8)
+            {
+                AutoFlush = true
+            };
+        }
 
         void ILogger.Print(string message)
         {
@@ -50,28 +53,57 @@ namespace magisterDiplom.Utils
 
         void ILogger.Print(string message, List<List<int>> matrix)
         {
-            string logline = message + "\n[";
+            if (matrix == null || matrix.Count == 0)
+            {
+                lock (_lock)
+                {
+                    _writer.WriteLine(message);
+                    _writer.WriteLine("[]");
+                }
+                return;
+            }
+
+            int theLongestRow = 0;
             for (int i = 0; i < matrix.Count; i++)
             {
-                for(int j = 0; j < matrix[i].Count; j++)
-                {
-                    logline += matrix[i].ToString() + " ";
-                }
-                if(i < matrix.Count - 1) logline += "\n";
+                if (matrix[i].Count > matrix[theLongestRow].Count) theLongestRow = i; 
             }
-            logline += "]";
-            lock (_lock)
-            {
-                _writer.WriteLine(logline);
-            }
-        }
+            int columns = matrix[theLongestRow].Count;
+            int[] columnWidths = new int[columns];
 
-        private void Log(string level, string message)
-        {
-            string logLine = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} [{level}] {message}";
+            for (int col = 0; col < columns; col++)
+            {
+                int maxWidth = 0;
+                foreach (var row in matrix)
+                {
+                    if (col < row.Count)
+                    {
+                        int width = row[col].ToString().Length;
+                        if (width > maxWidth) maxWidth = width;
+                    }
+                }
+                columnWidths[col] = maxWidth;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine(message);
+
+            for (int i = 0; i < matrix.Count; i++)
+            {
+                var row = matrix[i];
+                sb.Append("|");
+                for (int j = 0; j < row.Count; j++)
+                {
+                    if (j > 0) sb.Append(' ');
+                    sb.Append(row[j].ToString().PadLeft(columnWidths[j]));
+                }
+                sb.Append("|");
+                if (i < matrix.Count - 1) sb.AppendLine();
+            }
+
             lock (_lock)
             {
-                _writer.WriteLine(logLine);
+                _writer.WriteLine(sb.ToString());
             }
         }
 

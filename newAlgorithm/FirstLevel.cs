@@ -652,7 +652,7 @@ namespace newAlgorithm
             // Устанавливам номер строки
             int helpRowNumber = 1;
 
-            logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}.log";
+            logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
             _logger = new FileLogger(fileName + logFileNamePrefix);
 
             // Формируем имя файла
@@ -991,6 +991,8 @@ namespace newAlgorithm
                 MessageBox.Show("Решения найдены f1 = " + f1Optimal);
 
             }
+
+            ((FileLogger)_logger).Dispose();
         }
 
         public void GenetateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
@@ -999,7 +1001,7 @@ namespace newAlgorithm
             // Устанавливам номер строки
             int helpRowNumber = 1;
 
-            logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}.log";
+            logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
             _logger = new FileLogger("Logs/" + fileName + logFileNamePrefix);
 
             //// Инициализируем значения
@@ -1337,6 +1339,8 @@ namespace newAlgorithm
                 MessageBox.Show("Решения найдены f1 = " + f1Optimal);
 
             }
+
+            ((FileLogger)_logger).Dispose();
         }
         
         /// <summary>

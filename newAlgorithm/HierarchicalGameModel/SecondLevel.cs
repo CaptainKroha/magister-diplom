@@ -43,6 +43,9 @@ namespace magisterDiplom.HierarchicalGameModel
 
         public SecondLevelOutput Build(List<int> m, List<List<int>> A_matrix)
         {
+            _logger.Print("////////////////////////////////////////////////////");
+            _logger.Print("A:", A_matrix);
+
             _schedule.Update(m.Sum());
             List<int> dataTypes = _schedule.DataTypesInPriority();
 
