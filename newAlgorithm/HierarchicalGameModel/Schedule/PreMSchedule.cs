@@ -47,7 +47,7 @@ namespace magisterDiplom.Fabric
         /// </summary>
         private protected readonly new PreMConfiguration config;
 
-        protected PreMSchedule(PreMConfiguration configuration) : base(configuration)
+        protected PreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger)
         {
             config = configuration;
         }

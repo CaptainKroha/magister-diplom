@@ -1,5 +1,6 @@
 ﻿using magisterDiplom.Model;
 using magisterDiplom.Model.Configuration;
+using magisterDiplom.Utils;
 using newAlgorithm;
 using newAlgorithm.Model;
 using System.Collections.Generic;
@@ -82,9 +83,10 @@ namespace magisterDiplom
         /// </summary>
         private protected Configuration config;
 
-        protected Schedule(Configuration configuration)
+        protected Schedule(Configuration configuration, ILogger logger)
         {
             config = configuration;
+            _logger = logger;
         }
 
         protected List<Batch> schedule;
@@ -95,6 +97,8 @@ namespace magisterDiplom
         /// Словарь соответствий приборов и матриц моментов начала времени выполнения заданий
         /// </summary>
         protected Dictionary<int, List<List<int>>> startProcessing = new Dictionary<int, List<List<int>>>();
+
+        protected readonly ILogger _logger;
 
         public int MakeSpan
         {

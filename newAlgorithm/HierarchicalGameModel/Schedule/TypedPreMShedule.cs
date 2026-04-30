@@ -1,7 +1,10 @@
 ﻿using magisterDiplom.Model;
 using magisterDiplom.Model.Configuration;
+using magisterDiplom.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace magisterDiplom.Fabric
 {
@@ -25,17 +28,17 @@ namespace magisterDiplom.Fabric
 
         private protected readonly new TypedPreMConfiguration config;
 
-        private readonly List<MatrixYPreMTypes> Y_l;
+        private readonly MatrixYPreMTypes[] Y_l;
 
         #region Программный интерфейс
 
-        public TypedPreMShedule(TypedPreMConfiguration configuration) : base(configuration)
+        public TypedPreMShedule(TypedPreMConfiguration configuration, ILogger logger) : base(configuration, logger)
         {
             config = configuration;
-            Y_l = new List<MatrixYPreMTypes>(config.deviceCount);
-            for(int i = 0; i < config.deviceCount; i++)
+            Y_l = new MatrixYPreMTypes[config.deviceCount];
+            for(int device = 0; device < config.deviceCount; device++)
             {
-                Y_l.Add(new MatrixYPreMTypes(config.PreMaintenceTypesCount));
+                Y_l[device] = new MatrixYPreMTypes(config.PreMaintenceTypesCount);
             }
         }
         
@@ -50,27 +53,12 @@ namespace magisterDiplom.Fabric
 
         public override void Optimize()
         {
-            Calculate();
-            if (SolutionUnacceptable())
+            OptimizeByDeletePreMaintences();
+            if (success)
             {
-                success = false;
-                return;
+                OptimizeByChangePreMaintencesType();
             }
-
-            for (int batch = 0; batch < ScheduleSize() - 1; batch++)
-            {
-                for (int device = 0; device < config.deviceCount; device++)
-                {
-                    Y_l[device].UnsetPreMaintence(0, batch);
-                    Calculate();
-                    if (SolutionUnacceptable())
-                    {
-                        Y_l[device].SetPreMaintence(0, batch);
-                    }
-                }
-            }
-
-            success = true;
+               
         }
 
         public override SecondLevelOutput Result()
@@ -145,6 +133,163 @@ namespace magisterDiplom.Fabric
                 result += DeviceInactionDuration(device) * config.InactionCosts[device];   
             }
             return result;
+        }
+
+        protected void OptimizeByDeletePreMaintences()
+        {
+            success = true;
+            Calculate();
+            if (SolutionUnacceptable())
+            {
+                success = false;
+                return;
+            }
+
+            for (int batch = 0; batch < ScheduleSize() - 1; batch++)
+            {
+                for (int device = 0; device < config.deviceCount; device++)
+                {
+                    Y_l[device].UnsetPreMaintence(0, batch);
+                    Calculate();
+                    if (SolutionUnacceptable())
+                    {
+                        Y_l[device].SetPreMaintence(0, batch);
+                    }
+                }
+            }
+        }
+
+        protected void OptimizeByChangePreMaintencesType()
+        {
+
+            _logger.Debug("-=-=-Оптимизация типов ПТО-=-=-");
+
+            int[] w_l = new int[config.deviceCount];
+            int[] j_l = new int[config.deviceCount];
+
+            List<List<int>> PM_l = new List<List<int>>(config.deviceCount);
+            for(int device = 0; device < config.deviceCount; ++device)
+            {
+                PM_l.Add(new List<int>(matrixTPM[device].Count));
+                foreach(var preMSet in matrixTPM[device])
+                {
+                    PM_l[device].Add(preMSet.BatchIndex);   
+                }
+            }
+
+            _logger.Print("PM_l:", PM_l);
+
+            int s = 1;
+
+            while (true)
+            {
+                _logger.Print($"Iteration {s}");
+
+                int zero_prem_left = 0;
+                for (int device = 0; device < config.deviceCount; ++device)
+                {
+                    if (PM_l[device].Count > 0)
+                    {
+                        j_l[device] = PM_l[device].First();
+                    }
+                    else
+                    {
+                        j_l[device] = -1;
+                        zero_prem_left++;
+                    }
+                }
+
+                _logger.Print("j_l:", j_l);
+
+                if(zero_prem_left == config.deviceCount)
+                {
+                    break;
+                }
+
+                for (int i = 0; i < Y_l.Length; i++ )
+                {
+                    _logger.Print($"Y_{i+1}", Y_l[i].ToListList());
+                }
+
+                Calculate();
+                int best_f2 = F2_criteria();
+
+                int device_max_grad = -1;
+                int G = 0;
+
+                int k_l = 0;
+
+                while (DevicesToProcessLeft(PM_l, j_l))
+                {
+                    if (G > 0)
+                    {
+                        Y_l[device_max_grad].UnsetPreMaintence(w_l[device_max_grad], j_l[device_max_grad]);
+                        Y_l[device_max_grad].SetPreMaintence(w_l[device_max_grad] + k_l, j_l[device_max_grad]);
+                        w_l[device_max_grad] += k_l;
+                        _logger.Print("Upgrade found");
+                        _logger.Print("w_l:", w_l);
+                        break;
+                    }
+                    else
+                    {
+                        k_l++;
+                        _logger.Print($"k_l: {k_l}");
+
+                        for (int device = 0; device < config.deviceCount; device++)
+                        {
+                            if (j_l[device] == -1 || !PM_l[device].Contains(j_l[device]))
+                            {
+                                continue;
+                            }
+
+                            w_l[device] = Y_l[device].PreMaintenceStatusAfter(j_l[device]);
+                            if (w_l[device] + k_l < config.PreMaintenceTypesCount)
+                            {
+                                Y_l[device].UnsetPreMaintence(w_l[device], j_l[device]);
+                                Y_l[device].SetPreMaintence(w_l[device] + k_l, j_l[device]);
+                                _logger.Print($"Device: {device}; [{w_l[device]}, {j_l[device]}] -> [{w_l[device] + k_l}, {j_l[device]}]");
+
+                                Calculate();
+                                if (!SolutionUnacceptable())
+                                {
+                                    int current_f2 = F2_criteria();
+                                    int grad = current_f2 - best_f2;
+                                    _logger.Print($"grad: {grad}");
+
+                                    if (grad < 0 && -grad > G)
+                                    {
+                                        device_max_grad = device;
+                                        G = -grad;
+                                    }
+                                }
+                                else
+                                {
+                                    _logger.Print("Solution unacceptable");
+                                }
+                                Y_l[device].UnsetPreMaintence(w_l[device] + k_l, j_l[device]);
+                                Y_l[device].SetPreMaintence(w_l[device], j_l[device]);
+                            }
+                            else
+                            {
+                                _logger.Print($"Device {device} left");
+                                PM_l[device].Remove(j_l[device]);
+                            }
+                        }
+                    }
+                }
+
+                s++;
+            }
+
+        }
+
+        private bool DevicesToProcessLeft(List<List<int>> PM_l, int[] j_l)
+        {
+            for(int device = 0;  device < config.deviceCount; device++)
+            {
+                if (PM_l[device].Contains(j_l[device])) return true;
+            }
+            return false;
         }
 
         #endregion

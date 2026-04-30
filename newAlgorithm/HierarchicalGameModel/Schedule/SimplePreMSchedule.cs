@@ -1,6 +1,7 @@
 ﻿using ConsoleTables;
 using magisterDiplom.Model;
 using magisterDiplom.Model.Configuration;
+using magisterDiplom.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -302,40 +303,9 @@ namespace magisterDiplom.Fabric
         /// </summary>
         protected MatrixY _matrixY;
 
-        /// <summary>
-        /// Поток записи в файл
-        /// </summary>
-        //private JsonFileWriter fstream = null;
-
-        /// <summary>
-        /// Установит файл записи
-        /// </summary>
-        /// <param name="filename">Имя файла для записи</param>
-        //public void SetLogFile(string filename)
-        //{
-        //    // Создаём объект для записи в файл
-        //    if (fstream != null)
-        //        fstream.FinalizeFile();
-        //    fstream = new JsonFileWriter(filename);
-        //}
-
-        /// <summary>
-        /// Закроет объект для записи в файла
-        /// </summary>
-        //private void UnsetLogFile()
-        //{
-        //    // Закрываем объект
-        //    if (fstream != null)
-        //        fstream.FinalizeFile();
-        //    fstream = null;
-        //}
-
         #region Программный интерфейс
 
-        public SimplePreMSchedule(PreMConfiguration configuration) : base(configuration)
-        {
-            //SetLogFile("tmp.json");
-        }
+        public SimplePreMSchedule(PreMConfiguration configuration, ILogger logger) : base(configuration, logger) { }
 
         public override void Update(int batchesCount)
         {

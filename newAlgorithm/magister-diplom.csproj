@@ -139,6 +139,8 @@
     <Compile Include="Shedule.cs" />
     <Compile Include="SheduleElement.cs" />
     <Compile Include="UI\Visualizer\ExcelVisualizer.cs" />
+    <Compile Include="Utils\FileLogger.cs" />
+    <Compile Include="Utils\ILogger.cs" />
     <Compile Include="Utils\ListUtils.cs" />
     <Compile Include="Visualizer.cs" />
     <EmbeddedResource Include="UI\Form1.resx">

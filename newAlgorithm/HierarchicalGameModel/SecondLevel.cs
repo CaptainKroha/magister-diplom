@@ -1,6 +1,7 @@
 ﻿
 using magisterDiplom.Fabric;
 using magisterDiplom.Model.Configuration;
+using magisterDiplom.Utils;
 using System.Collections.Generic;
 using System.Linq;
 using static magisterDiplom.Schedule;
@@ -11,37 +12,39 @@ namespace magisterDiplom.HierarchicalGameModel
     internal class SecondLevel
     {
 
-        private readonly Schedule schedule;
+        private readonly Schedule _schedule;
+        private readonly ILogger _logger;
 
-        private SecondLevel(Schedule schedule)
+        private SecondLevel(Schedule schedule, ILogger logger)
         {
-            this.schedule = schedule;
+            _schedule = schedule;
+            _logger = logger;
         }
 
-        public static SecondLevel CreateForSimplePreMaintence(PreMConfiguration configuration)
+        public static SecondLevel CreateForSimplePreMaintence(PreMConfiguration configuration, ILogger logger)
         {
-            SimplePreMSchedule schedule = new SimplePreMSchedule(configuration);
-            return new SecondLevel(schedule);
+            var schedule = new SimplePreMSchedule(configuration, logger);
+            return new SecondLevel(schedule, logger);
         }
 
-        public static SecondLevel CreateForTypedPreMaintence(TypedPreMConfiguration configuration)
+        public static SecondLevel CreateForTypedPreMaintence(TypedPreMConfiguration configuration, ILogger logger)
         {
-            var schedule = new TypedPreMShedule(configuration);
-            return new SecondLevel(schedule);
+            var schedule = new TypedPreMShedule(configuration, logger);
+            return new SecondLevel(schedule, logger);
         }
 
         public int Makespan
         {
             get {
-                return schedule.MakeSpan;
+                return _schedule.MakeSpan;
             }
             
         }
 
         public SecondLevelOutput Build(List<int> m, List<List<int>> A_matrix)
         {
-            schedule.Update(m.Sum());
-            List<int> dataTypes = schedule.DataTypesInPriority();
+            _schedule.Update(m.Sum());
+            List<int> dataTypes = _schedule.DataTypesInPriority();
 
             for (int batch = 0; batch < m.Max(); batch++)
             {
@@ -50,12 +53,12 @@ namespace magisterDiplom.HierarchicalGameModel
                     if (batch >= m[dataType])
                         continue;
 
-                    schedule.Add(dataType, A_matrix[dataType][batch]);
+                    _schedule.Add(dataType, A_matrix[dataType][batch]);
                 }
             }
 
-            schedule.Optimize();
-            return schedule.Result();
+            _schedule.Optimize();
+            return _schedule.Result();
         }
 
     }

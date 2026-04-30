@@ -58,7 +58,7 @@ namespace magisterDiplom.Model.Configuration
             dataTypesCount = config.dataTypesCount;
             deviceCount = config.deviceCount;
             batchCount = config.batchCount;
-            proccessingTime = new int[config.proccessingTime.Count, config.proccessingTime[0].Count];
+            proccessingTime = ListListToArray(config.proccessingTime);
             for (int i = 0; i < deviceCount; ++i)
             {
                 changeoverTime.Add(i, ListListToArray(config.changeoverTime[i]));
