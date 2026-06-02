@@ -908,7 +908,7 @@ namespace newAlgorithm
         private void getTypedPreMSolutionBtn_Click(object sender, EventArgs e)
         {
             var firstLevel = new FirstLevel(GetConfig(), CreateBatchCountList());
-            firstLevel.GenetateSolutionWithTypedPremaintenance("TypedPreM", TypedPreMConfiguration());
+            firstLevel.GenerateSolutionWithTypedPremaintenance("TypedPreM", TypedPreMConfiguration());
         }
 
         private void TypedPreM_ConfSave_Btn_Click(object sender, EventArgs e)

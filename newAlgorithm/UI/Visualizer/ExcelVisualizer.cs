@@ -21,32 +21,32 @@ namespace magisterDiplom.UI.Visualizer
         /// <summary>
         /// Данная структура данных содержит информацию о конфигурации конвейерной системы
         /// </summary>
-        private readonly Config config;
+        protected readonly Config config;
 
         /// <summary>
         /// Объект для работы с Excel
         /// </summary>
-        private Excel.Application excelApplication;
+        protected Excel.Application excelApplication;
 
         /// <summary>
         /// Владка для работы с Excel
         /// </summary>
-        private Excel.Worksheet excelSheet;
+        protected Excel.Worksheet excelSheet;
 
         /// <summary>
         /// Владка для работы с Excel
         /// </summary>
-        private Excel.Worksheet metaDataSheet;
+        protected Excel.Worksheet metaDataSheet;
 
         /// <summary>
         /// Номер строки отображения в Excel таблице
         /// </summary>
-        private const int displayRowNumber = 1;
+        protected const int displayRowNumber = 1;
 
         /// <summary>
         /// Номер колонки отображения в Excel таблице
         /// </summary>
-        private const int displayColumnNumber = 1;
+        protected const int displayColumnNumber = 1;
 
         public ExcelVisualizer(Config config)
         {
@@ -68,8 +68,8 @@ namespace magisterDiplom.UI.Visualizer
 
             // Создаём вкладку
             Workbook mainWorkbook = excelApplication.Workbooks.Add(Type.Missing);
-            mainWorkbook.Worksheets.Add();
-            mainWorkbook.Worksheets.Add();
+            while (mainWorkbook.Worksheets.Count < 3)
+                mainWorkbook.Worksheets.Add();
 
             // Получаем вкладку с параметрами
             VisualizeConfig((Excel.Worksheet)excelApplication.Worksheets.get_Item(1), preMConfig, 1, 1);
@@ -154,7 +154,7 @@ namespace magisterDiplom.UI.Visualizer
         /// <param name="preMConfig">Параметры характеризующие ПТО</param>
         /// <param name="row">Номер строки начала отрисовки</param>
         /// <param name="col">Номер столбца начала отрисовки</param>
-        private void VisualizeConfig(Worksheet worksheet, PreMConfiguration preMConfig, int row = 0, int col = 0)
+        protected void VisualizeConfig(Worksheet worksheet, PreMConfiguration preMConfig, int row = 0, int col = 0)
         {
             // Изменяем название закладки
             worksheet.Name = "Начальные параметры";
@@ -312,7 +312,7 @@ namespace magisterDiplom.UI.Visualizer
                 worksheet.Cells[row, col] = $"Интенсивность восстановления";
                 worksheet.Cells[row, col].HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
                 worksheet.Cells[row, col].Font.Bold = true;
-                r.Columns.AutoFit();
+                r.Columns.AutoFit(); 
                 worksheet.Cells[row + 1, col + 1] = "Вероятность";
                 worksheet.Cells[row + 1, col + 1].Columns.AutoFit();
                 for (int device = 0; device < config.deviceCount; device++)
@@ -332,7 +332,7 @@ namespace magisterDiplom.UI.Visualizer
         /// </summary>
         /// <param name="matrixA">Матрица составов пакетов заданий</param>
         /// <param name="row">Номер строки для отображения</param>
-        private void VisualizeUpperLevel(List<List<int>> matrixA, ref int row)
+        protected void VisualizeUpperLevel(List<List<int>> matrixA, ref int row)
         {
             // Объявляем диапазон
             Range r;
@@ -423,11 +423,12 @@ namespace magisterDiplom.UI.Visualizer
         /// </summary>
         /// <param name="compositionNumber">Номер состава пакетов</param>
         /// <param name="matrixA">Матрица составов пакетов заданий</param>
+        /// <param name="secondLevelOutput">Выходные данные второго уровня</param>
         /// <param name="secondLevel">Класс для получения данных из нижнего уровня</param>
         /// <param name="preMConfig">Конфигурационная структура для отображения общих данных</param>
         /// <param name="row">Номер строки начала отрисовки</param>
         /// <param name="isSuccessfully">Флаг построения расписания</param>
-        private void VisualizeSimplePreMData(
+        protected void VisualizeSimplePreMData(
             int compositionNumber,
             List<List<int>> matrixA,
             SimplePreMSchedule.SimplePreMaintenceSecondLevelOutput secondLevelOutput,
@@ -553,7 +554,7 @@ namespace magisterDiplom.UI.Visualizer
                     // Выводим заголовок таблицы
                     metaDataSheet.Cells[row, col] = "Матрица R";
                     metaDataSheet.Cells[row, col].Font.Bold = true;
-                    metaDataSheet.Cells[row, col].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+                    metaDataSheet.Cells[row, col].HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
 
                     // Устанавливаем автовыравнивание
                     r.Columns.AutoFit();
@@ -673,7 +674,7 @@ namespace magisterDiplom.UI.Visualizer
                         // Заголовок
                         metaDataSheet.Cells[row, col] = $"Матрица T^0{device + 1}";
                         metaDataSheet.Cells[row, col].Font.Bold = true;
-                        metaDataSheet.Cells[row, col].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+                        metaDataSheet.Cells[row, col].HorizontalAlignment = Excel.XlHAlign.xlHAlignCenter;
                         for (int batchIndex = 0; batchIndex < startProcessing[device].Count(); batchIndex++)
                             metaDataSheet.Cells[row + batchIndex + 2, col] = $"ПЗ {batchIndex+ 1}";
                         metaDataSheet.Cells[row + 1, col] = "Задание:";
