@@ -2301,6 +2301,5 @@ namespace newAlgorithm
             return config;
 
         }
-
     }
 }
