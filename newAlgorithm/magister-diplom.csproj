@@ -93,6 +93,7 @@
     <Compile Include="AllSolutionsFirstLevel.cs" />
     <Compile Include="BatchTypeClaims.cs" />
     <Compile Include="CalculationService.cs" />
+    <Compile Include="HierarchicalGameModel\ScheduleBuildingResult.cs" />
     <Compile Include="HierarchicalGameModel\Schedule\PreMSchedule.cs" />
     <Compile Include="HierarchicalGameModel\Schedule\SimplePreMSchedule.cs" />
     <Compile Include="HierarchicalGameModel\Schedule\TypedPreMShedule.cs" />

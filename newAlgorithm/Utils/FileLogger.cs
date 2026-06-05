@@ -1,4 +1,5 @@
-﻿using System;
+﻿using newAlgorithm;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,25 +13,21 @@ namespace magisterDiplom.Utils
 
         private StreamWriter _writer;
         private readonly object _lock = new object();
+        private bool logging;
 
-        public FileLogger(string filename)
+        public FileLogger(string filename, bool logging)
         {
-            _writer = new StreamWriter(filename, append: true, Encoding.UTF8)
-            {
-                AutoFlush = true
-            };
-        }
-
-        public void SetLogFile(string filename)
-        {
-            _writer = new StreamWriter(filename, append: true, Encoding.UTF8)
-            {
-                AutoFlush = true
-            };
+            this.logging = logging;
+            if(logging)
+                _writer = new StreamWriter(filename, append: true, Encoding.UTF8)
+                {
+                    AutoFlush = true
+                };
         }
 
         void ILogger.Print(string message)
         {
+            if (!logging) return;
             lock (_lock)
             {
                 _writer.WriteLine(message);
@@ -39,6 +36,7 @@ namespace magisterDiplom.Utils
 
         void ILogger.Print(string message,int[] array)
         {
+            if (!logging) return;
             string logline = message + " [";
             for(int i = 0; i < array.Length; i++)
             {
@@ -53,6 +51,7 @@ namespace magisterDiplom.Utils
 
         void ILogger.Print(string message, List<List<int>> matrix)
         {
+            if (!logging) return;
             if (matrix == null || matrix.Count == 0)
             {
                 lock (_lock)

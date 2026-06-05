@@ -107,6 +107,8 @@
             this.preMaintenceDurationSetValue = new System.Windows.Forms.NumericUpDown();
             this.getPreMSolutionOpt = new System.Windows.Forms.Button();
             this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.panel1 = new System.Windows.Forms.Panel();
+            this.clb_loopedVariables = new System.Windows.Forms.CheckedListBox();
             this.TypedPreM_ConfLoad_Btn = new System.Windows.Forms.Button();
             this.TypedPreM_ConfSave_Btn = new System.Windows.Forms.Button();
             this.getTypedPreMSolutionBtn = new System.Windows.Forms.Button();
@@ -118,6 +120,9 @@
             this.dataGridView_preMDuration = new System.Windows.Forms.DataGridView();
             this.label16 = new System.Windows.Forms.Label();
             this.numeric_preM_types_count = new System.Windows.Forms.NumericUpDown();
+            this.numeric_mu_start = new System.Windows.Forms.NumericUpDown();
+            this.numeric_mu_end = new System.Windows.Forms.NumericUpDown();
+            this.numeric_mu_step = new System.Windows.Forms.NumericUpDown();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_data_types_count)).BeginInit();
             this.tabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
@@ -143,10 +148,14 @@
             ((System.ComponentModel.ISupportInitialize)(this.restoreRatesSetValue)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.preMaintenceDurationSetValue)).BeginInit();
             this.tabPage3.SuspendLayout();
+            this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preM_general)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMCosts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMDuration)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_preM_types_count)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_start)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_end)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_step)).BeginInit();
             this.SuspendLayout();
             // 
             // numeric_data_types_count
@@ -1108,6 +1117,7 @@
             // 
             // tabPage3
             // 
+            this.tabPage3.Controls.Add(this.panel1);
             this.tabPage3.Controls.Add(this.TypedPreM_ConfLoad_Btn);
             this.tabPage3.Controls.Add(this.TypedPreM_ConfSave_Btn);
             this.tabPage3.Controls.Add(this.getTypedPreMSolutionBtn);
@@ -1125,6 +1135,27 @@
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "ПТО (Типы)";
             this.tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.numeric_mu_step);
+            this.panel1.Controls.Add(this.numeric_mu_end);
+            this.panel1.Controls.Add(this.numeric_mu_start);
+            this.panel1.Controls.Add(this.clb_loopedVariables);
+            this.panel1.Location = new System.Drawing.Point(1033, 68);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(368, 132);
+            this.panel1.TabIndex = 10;
+            // 
+            // clb_loopedVariables
+            // 
+            this.clb_loopedVariables.FormattingEnabled = true;
+            this.clb_loopedVariables.Items.AddRange(new object[] {
+            "Интенсивность отказов"});
+            this.clb_loopedVariables.Location = new System.Drawing.Point(16, 16);
+            this.clb_loopedVariables.Name = "clb_loopedVariables";
+            this.clb_loopedVariables.Size = new System.Drawing.Size(159, 94);
+            this.clb_loopedVariables.TabIndex = 0;
             // 
             // TypedPreM_ConfLoad_Btn
             // 
@@ -1299,6 +1330,60 @@
             0});
             this.numeric_preM_types_count.ValueChanged += new System.EventHandler(this.numeric_preM_types_count_ValueChanged);
             // 
+            // numeric_mu_start
+            // 
+            this.numeric_mu_start.DecimalPlaces = 2;
+            this.numeric_mu_start.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numeric_mu_start.Location = new System.Drawing.Point(181, 16);
+            this.numeric_mu_start.Name = "numeric_mu_start";
+            this.numeric_mu_start.Size = new System.Drawing.Size(50, 20);
+            this.numeric_mu_start.TabIndex = 1;
+            this.numeric_mu_start.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            // 
+            // numeric_mu_end
+            // 
+            this.numeric_mu_end.DecimalPlaces = 2;
+            this.numeric_mu_end.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numeric_mu_end.Location = new System.Drawing.Point(237, 16);
+            this.numeric_mu_end.Name = "numeric_mu_end";
+            this.numeric_mu_end.Size = new System.Drawing.Size(47, 20);
+            this.numeric_mu_end.TabIndex = 2;
+            this.numeric_mu_end.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            // 
+            // numeric_mu_step
+            // 
+            this.numeric_mu_step.DecimalPlaces = 2;
+            this.numeric_mu_step.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            this.numeric_mu_step.Location = new System.Drawing.Point(290, 16);
+            this.numeric_mu_step.Name = "numeric_mu_step";
+            this.numeric_mu_step.Size = new System.Drawing.Size(50, 20);
+            this.numeric_mu_step.TabIndex = 3;
+            this.numeric_mu_step.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            131072});
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -1338,10 +1423,14 @@
             ((System.ComponentModel.ISupportInitialize)(this.preMaintenceDurationSetValue)).EndInit();
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
+            this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preM_general)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMCosts)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMDuration)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_preM_types_count)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_start)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_end)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_step)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -1432,6 +1521,11 @@
         private System.Windows.Forms.Button getTypedPreMSolutionBtn;
         private System.Windows.Forms.Button TypedPreM_ConfLoad_Btn;
         private System.Windows.Forms.Button TypedPreM_ConfSave_Btn;
+        private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.CheckedListBox clb_loopedVariables;
+        private System.Windows.Forms.NumericUpDown numeric_mu_step;
+        private System.Windows.Forms.NumericUpDown numeric_mu_end;
+        private System.Windows.Forms.NumericUpDown numeric_mu_start;
     }
 }
 
