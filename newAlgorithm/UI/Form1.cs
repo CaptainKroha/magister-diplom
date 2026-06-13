@@ -1,6 +1,11 @@
 ﻿using magisterDiplom;
+using magisterDiplom.HierarchicalGameModel;
 using magisterDiplom.Model;
+using magisterDiplom.Model.Configuration;
 using magisterDiplom.Utils;
+using newAlgorithm.Model;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,10 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using magisterDiplom.Model.Configuration;
-using newAlgorithm.Model;
+using static magisterDiplom.Fabric.TypedPreMShedule;
 
 namespace newAlgorithm
 {
@@ -105,6 +107,8 @@ namespace newAlgorithm
         #region Обработка событий
 
         #region Обработчики нажатия кнопок
+
+        #region Старые кнопки
 
         /// <summary>
         /// Данная функция вызывается при нажание на кнопку "Второй метод"
@@ -706,11 +710,8 @@ namespace newAlgorithm
             TablesRebuild();
         }
 
-        /// <summary>
-        /// Данная функция обрабатываем копирования данных в таблицы dataGridView_changeover_time с первого устройства на все остальные
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        #endregion
+
         private void CopyPreprocessingTime_Click(object sender, EventArgs e)
         {
 
@@ -771,11 +772,6 @@ namespace newAlgorithm
             SetRestoringDevice(restoringRates);
         }
 
-        /// <summary>
-        /// Фуния открывает диалоговое окно, для импорта параметров системы
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void button_import_Click(object sender, EventArgs e)
         {
 
@@ -837,11 +833,6 @@ namespace newAlgorithm
             }
         }
 
-        /// <summary>
-        /// Функция открывает диалоговое окно, для экспорта параметров системы
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
         private void button_export_Click(object sender, EventArgs e)
         {
 
@@ -875,40 +866,17 @@ namespace newAlgorithm
         private void GetPreMSolution_Click(object sender, EventArgs e)
         {
 
-            // Получаем экземпляр конфигурационной структуры для ПТО
-            PreMConfig preMConfig = GetPreMConfig();
-
-            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
-            List<int> batchCountList = CreateBatchCountList();
-
-            // Формируем первый уровень
-            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
-
-            PreMConfiguration configuration = new PreMConfiguration(preMConfig);
-
-            // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", configuration);
+            BuildTypedPreMSchedule();
         }
 
         private void getPreMSolutionOpt_Click(object sender, EventArgs e)
         {
-            // Получаем экземпляр конфигурационной структуры для ПТО
-            PreMConfig preMConfig = GetPreMConfig();
-
-            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
-            List<int> batchCountList = CreateBatchCountList();
-
-            // Формируем первый уровень
-            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
-
-            // Выполняем генерацию данных для всех типов вторым алгоритмом
-            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
+            BuildTypedPreMSchedule();
         }
 
         private void getTypedPreMSolutionBtn_Click(object sender, EventArgs e)
         {
-            var firstLevel = new FirstLevel(GetConfig(), CreateBatchCountList());
-            firstLevel.GenerateSolutionWithTypedPremaintenance("TypedPreM", TypedPreMConfiguration());
+            BuildTypedPreMSchedule();
         }
 
         private void TypedPreM_ConfSave_Btn_Click(object sender, EventArgs e)
@@ -996,6 +964,90 @@ namespace newAlgorithm
         }
 
         #endregion
+
+        private void BuildPreMSolution()
+        {
+            // Получаем экземпляр конфигурационной структуры для ПТО
+            PreMConfig preMConfig = GetPreMConfig();
+
+            // Инициализируем вектор длиной dataTypesCount, каждый элемент которого будет равен batchCount
+            List<int> batchCountList = CreateBatchCountList();
+
+            // Формируем первый уровень
+            var firstLevel = new FirstLevel(preMConfig.config, batchCountList);
+
+            // Выполняем генерацию данных для всех типов вторым алгоритмом
+            firstLevel.GenetateSolutionWithPremaintenance("PreMaintenance", new PreMConfiguration(preMConfig));
+        }
+
+        private void BuildTypedPreMSchedule()
+        {
+            var firstLevel = new FirstLevel(GetConfig(), CreateBatchCountList());
+            TypedPreMConfiguration config = TypedPreMConfiguration();
+            string logFileName = "TypedPreM";
+
+            if (clb_loopedVariables.CheckedItems.Count > 0)
+            {
+                string projectFolder = Path.GetFullPath(Path.Combine(Application.StartupPath, @"..\..\..\"));
+                string resultsFolder = Path.Combine(projectFolder, "results");
+                if (!Directory.Exists(resultsFolder))
+                {
+                    Directory.CreateDirectory(resultsFolder);
+                }
+
+                string logFileNameSuffix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
+                ILogger logger = new FileLogger(Path.Combine(resultsFolder, logFileName + logFileNameSuffix), true);
+
+                string resultsHeader = "mu F1 ";
+                for(int preMType = 0; preMType < config.PreMaintenceTypesCount; )
+                {
+                    resultsHeader += $"Yl{++preMType}";
+                }
+
+                double start = (double) numeric_mu_start.Value;
+                double end = (double) numeric_mu_end.Value;
+                double step = (double) numeric_mu_step.Value;
+
+                
+                for (double current = start; current <= end; current += step)
+                {
+                    for (int device = 0; device < config.deviceCount; device++)
+                    {
+                        config.failureRates[device] = current;
+                    }
+                    ScheduleBuildingResult result = firstLevel.GenetateSolutionWithTypedPremaintenance($"{logFileName}_{current}_", config);
+                    if(result is null)
+                    {
+                        logger.Print($"{current} -");
+                    }
+                    else
+                    {
+                        string resultString = $"{current} {result.Makespan}";
+                        for (int preMtype = 0;  preMtype < config.PreMaintenceTypesCount; preMtype++)
+                        {
+                            int preMCount = 0;
+                            for(int device = 0; device < config.deviceCount; device++)
+                            {
+                                var deviceMatrix = ((TypedPreMaintenceSecondLevelOutput)result.Schedule).Yl_Matrixes[device];
+                                foreach(var preMStatus in deviceMatrix[preMtype])
+                                {
+                                    preMCount += preMStatus;
+                                }
+                            }
+                            resultString += $" {preMCount}";
+                        }
+                        logger.Print(resultString);
+                    }
+                    
+                }
+
+                ((FileLogger)logger).Dispose();
+            }
+            else
+            {
+                firstLevel.GenetateSolutionWithTypedPremaintenance(logFileName, config);
+            }
+        }
 
         #region Обработка рандомизаций и выбора вкладки
 
@@ -2249,6 +2301,5 @@ namespace newAlgorithm
             return config;
 
         }
-
     }
 }

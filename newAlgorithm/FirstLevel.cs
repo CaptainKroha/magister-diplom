@@ -97,6 +97,8 @@ namespace newAlgorithm
 
         private ILogger _logger;
 
+        private PreMSchedule.SecondLevelOutput optimalSlSolution;
+
         /// <summary>
         /// Конструктор с параметрами принимающий структуру конфигурации
         /// </summary>
@@ -492,6 +494,7 @@ namespace newAlgorithm
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(tempM);
                         solutionFlag = true;
                         f1Optimal = fBuf;
+                        optimalSlSolution = secondLevelOutput;
                         file.Write(" +");
                         return;
                     }
@@ -658,7 +661,7 @@ namespace newAlgorithm
             int helpRowNumber = 1;
 
             logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
-            _logger = new FileLogger(fileName + logFileNamePrefix);
+            _logger = new FileLogger(fileName + logFileNamePrefix, Form1.loggingOn);
 
             // Формируем имя файла
             
@@ -1000,14 +1003,14 @@ namespace newAlgorithm
             ((FileLogger)_logger).Dispose();
         }
 
-        public void GenerateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
+        public ScheduleBuildingResult GenetateSolutionWithTypedPremaintenance(string fileName, TypedPreMConfiguration config)
         {
 
             // Устанавливам номер строки
             int helpRowNumber = 1;
 
             logFileNamePrefix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
-            _logger = new FileLogger("Logs/" + fileName + logFileNamePrefix);
+            _logger = new FileLogger("Logs/" + fileName + logFileNamePrefix, Form1.loggingOn);
 
             //// Инициализируем значения
             //compositionNumber = 1;
@@ -1137,6 +1140,7 @@ namespace newAlgorithm
 
                         // Переопределяем критерий f1 лучшего решения
                         f1Optimal = f1Current;
+                        optimalSlSolution = secondLevelOutput;
 
                         // Логируем нахождение лучшего решения
                         file.Write(" +");
@@ -1280,6 +1284,7 @@ namespace newAlgorithm
 
                                     // Переопределяем критерий f1 лучшего решения
                                     f1Optimal = fBuf;
+                                    optimalSlSolution = secondLevelOutput3;
 
                                     // Логируем нахождение лучшего решения
                                     file.Write(" +");
@@ -1328,8 +1333,8 @@ namespace newAlgorithm
                 // Проверяем успешность работы программы
                 if (f1Optimal == int.MaxValue)
                 {
-                    MessageBox.Show("Решения не было найдено");
-                    return;
+                    if(Form1.loggingOn) MessageBox.Show("Решения не было найдено");
+                    return null;
                 }
 
                 // Если флаг визуализации установлен
@@ -1342,11 +1347,23 @@ namespace newAlgorithm
                 // Логируем лучший критерий f1
                 file.WriteLine(f1Optimal);
                 file.Close();
-                MessageBox.Show("Решения найдены f1 = " + f1Optimal);
+                if(Form1.loggingOn) MessageBox.Show("Решения найдены f1 = " + f1Optimal);
+
+                _logger.Print("=+=+=+=+ Найденное оптимальное решение =+=+=+=+");
+
+                _logger.Print("A:", bestMatrixA);
+                _logger.Print("P:", optimalSlSolution.P_Matrix);
+                _logger.Print("R:", optimalSlSolution.R_Matrix);
+                for (int device = 0; device < config.deviceCount; device++)
+                {
+                    _logger.Print($"Y_l({device + 1}):", ((TypedPreMShedule.TypedPreMaintenceSecondLevelOutput)optimalSlSolution).Yl_Matrixes[device]);
+                }
+                _logger.Print("=+=+=+=+=+=+=+=+");
 
             }
 
             ((FileLogger)_logger).Dispose();
+            return new ScheduleBuildingResult(f1Optimal, bestMatrixA, optimalSlSolution);
         }
         
         /// <summary>
