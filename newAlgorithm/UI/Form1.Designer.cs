@@ -111,6 +111,9 @@
             this.numeric_mu_step = new System.Windows.Forms.NumericUpDown();
             this.numeric_mu_end = new System.Windows.Forms.NumericUpDown();
             this.numeric_mu_start = new System.Windows.Forms.NumericUpDown();
+            this.numeric_restore_step = new System.Windows.Forms.NumericUpDown();
+            this.numeric_restore_end = new System.Windows.Forms.NumericUpDown();
+            this.numeric_restore_start = new System.Windows.Forms.NumericUpDown();
             this.clb_loopedVariables = new System.Windows.Forms.CheckedListBox();
             this.TypedPreM_ConfLoad_Btn = new System.Windows.Forms.Button();
             this.TypedPreM_ConfSave_Btn = new System.Windows.Forms.Button();
@@ -152,6 +155,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_step)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_end)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_start)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_step)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_end)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_start)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preM_general)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMCosts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMDuration)).BeginInit();
@@ -1141,6 +1147,9 @@
             this.panel1.Controls.Add(this.numeric_mu_step);
             this.panel1.Controls.Add(this.numeric_mu_end);
             this.panel1.Controls.Add(this.numeric_mu_start);
+            this.panel1.Controls.Add(this.numeric_restore_step);
+            this.panel1.Controls.Add(this.numeric_restore_end);
+            this.panel1.Controls.Add(this.numeric_restore_start);
             this.panel1.Controls.Add(this.clb_loopedVariables);
             this.panel1.Location = new System.Drawing.Point(1033, 68);
             this.panel1.Name = "panel1";
@@ -1200,12 +1209,67 @@
             0,
             0,
             196608});
-            // 
+            //
+            // numeric_restore_step
+            //
+            this.numeric_restore_step.DecimalPlaces = 3;
+            this.numeric_restore_step.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numeric_restore_step.Location = new System.Drawing.Point(290, 42);
+            this.numeric_restore_step.Name = "numeric_restore_step";
+            this.numeric_restore_step.Size = new System.Drawing.Size(50, 20);
+            this.numeric_restore_step.TabIndex = 6;
+            this.numeric_restore_step.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            //
+            // numeric_restore_end
+            //
+            this.numeric_restore_end.DecimalPlaces = 3;
+            this.numeric_restore_end.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numeric_restore_end.Location = new System.Drawing.Point(237, 42);
+            this.numeric_restore_end.Name = "numeric_restore_end";
+            this.numeric_restore_end.Size = new System.Drawing.Size(47, 20);
+            this.numeric_restore_end.TabIndex = 5;
+            this.numeric_restore_end.Value = new decimal(new int[] {
+            3,
+            0,
+            0,
+            65536});
+            //
+            // numeric_restore_start
+            //
+            this.numeric_restore_start.DecimalPlaces = 3;
+            this.numeric_restore_start.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.numeric_restore_start.Location = new System.Drawing.Point(181, 42);
+            this.numeric_restore_start.Name = "numeric_restore_start";
+            this.numeric_restore_start.Size = new System.Drawing.Size(50, 20);
+            this.numeric_restore_start.TabIndex = 4;
+            this.numeric_restore_start.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            //
             // clb_loopedVariables
-            // 
+            //
             this.clb_loopedVariables.FormattingEnabled = true;
             this.clb_loopedVariables.Items.AddRange(new object[] {
-            "Интенсивность отказов"});
+            "Интенсивность отказов",
+            "Интенсивность восстановления"});
             this.clb_loopedVariables.Location = new System.Drawing.Point(16, 16);
             this.clb_loopedVariables.Name = "clb_loopedVariables";
             this.clb_loopedVariables.Size = new System.Drawing.Size(159, 94);
@@ -1427,6 +1491,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_step)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_end)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numeric_mu_start)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_step)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_end)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numeric_restore_start)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preM_general)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMCosts)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_preMDuration)).EndInit();
@@ -1526,6 +1593,9 @@
         private System.Windows.Forms.NumericUpDown numeric_mu_step;
         private System.Windows.Forms.NumericUpDown numeric_mu_end;
         private System.Windows.Forms.NumericUpDown numeric_mu_start;
+        private System.Windows.Forms.NumericUpDown numeric_restore_step;
+        private System.Windows.Forms.NumericUpDown numeric_restore_end;
+        private System.Windows.Forms.NumericUpDown numeric_restore_start;
     }
 }
 

@@ -326,145 +326,133 @@ namespace newAlgorithm
         /// <param name="e"></param>
         private void Button4_Click(object sender, EventArgs e)
         {
+            const int deviceCount = 3;
+            const int dataTypesCount = 3;
+            const int preMTypesCount = 3;
 
-            // Выполняем перестроение матриц
-            TablesRebuild();
-
-            Form1.direct = checkBox_deadline_on.Checked;
-            int[] N_komplect_sostav = { 2, 4 };
-
-            // Формируем вектор из возможных количеств типов данных
-            int[] _dataTypesCountArray = { 5, 10 };
-
-            // Формируем вектор из возможных количеств приборов в конвейерной системе
-            int[] _deviceCountArray = { 5, 10 };
-
-            // Формируем вектор из значений { 2, 4, 8, 16, 32 }, для генерации матриц выполнения и переналадки
-            int[] time = { 2, 4, 8, 16, 32 };
-
-            var file = "testFile_";
-            var str = "direct";
-            if (!Form1.direct)
+            var changeoverScenarios = new List<KeyValuePair<int, List<List<int>>>>
             {
-                str = "first_task";
-            }
+                new KeyValuePair<int, List<List<int>>>(1, new List<List<int>> { new List<int> { 0, 3, 3 }, new List<int> { 3, 0, 3 }, new List<int> { 3, 3, 0 } }),
+                new KeyValuePair<int, List<List<int>>>(2, new List<List<int>> { new List<int> { 0, 6, 3 }, new List<int> { 3, 0, 6 }, new List<int> { 6, 3, 0 } }),
+                new KeyValuePair<int, List<List<int>>>(3, new List<List<int>> { new List<int> { 0, 9, 3 }, new List<int> { 3, 0, 9 }, new List<int> { 9, 3, 0 } }),
+                new KeyValuePair<int, List<List<int>>>(4, new List<List<int>> { new List<int> { 0, 12, 3 }, new List<int> { 3, 0, 12 }, new List<int> { 12, 3, 0 } })
+            };
 
-            int n_kom;
-            int n_kom_q;
-            try
+            var processingScenarios = new List<KeyValuePair<int, List<List<int>>>>
             {
-                n_kom = Convert.ToInt32(textBox1.Text);
-                n_kom_q = Convert.ToInt32(textBox2.Text);
-            }
-            catch (Exception)
-            {
-                n_kom = 2;
-                n_kom_q = 2;
-            }
-            var rand = new Random((int)DateTime.Now.ToBinary());
-            int temp;
-            var fileOut = new StreamWriter(file + "All_" + str + "_" + n_kom + "_" + n_kom_q + "_new.txt", true);
+                new KeyValuePair<int, List<List<int>>>(1, new List<List<int>> { new List<int> { 3, 3, 3 }, new List<int> { 3, 3, 3 }, new List<int> { 3, 3, 3 } }),
+                new KeyValuePair<int, List<List<int>>>(2, new List<List<int>> { new List<int> { 6, 3, 6 }, new List<int> { 3, 6, 3 }, new List<int> { 6, 3, 6 } }),
+                new KeyValuePair<int, List<List<int>>>(3, new List<List<int>> { new List<int> { 9, 3, 9 }, new List<int> { 3, 9, 3 }, new List<int> { 9, 3, 9 } })
+            };
 
-            timeSets = new List<List<int>>();
-            //foreach(var n_kom_q in N_komplect_for_type)
+            var premScenarios = new List<Tuple<int, int[], int[]>>
             {
-                for (int i = 0; i < n_kom; i++)
+                Tuple.Create(2, new[] { 2, 3, 4 }, new[] { 24, 14, 4 }),
+                Tuple.Create(4, new[] { 2, 5, 8 }, new[] { 16, 10, 4 }),
+                Tuple.Create(6, new[] { 2, 7, 12 }, new[] { 8, 6, 4 })
+            };
+
+            double.TryParse(betaValue.Text, out double beta);
+            int bufferValue = Convert.ToInt32(numeric_buffer.Value);
+            int batchCountValue = Convert.ToInt32(numeric_batch_count.Value);
+            bool fixedBatches = checkBox_fixed_batches.Checked;
+
+            List<double?> failureValues = BuildSweepValues(true, numeric_mu_start.Value, numeric_mu_end.Value, numeric_mu_step.Value);
+            List<double?> restoreValues = BuildSweepValues(true, numeric_restore_start.Value, numeric_restore_end.Value, numeric_restore_step.Value);
+
+            string projectFolder = Path.GetFullPath(Path.Combine(Application.StartupPath, @"..\..\..\"));
+            string resultsFolder = Path.Combine(projectFolder, "results");
+            if (!Directory.Exists(resultsFolder))
+                Directory.CreateDirectory(resultsFolder);
+
+            string fileSuffix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}";
+            StreamWriter logFile = new StreamWriter(Path.Combine(resultsFolder, $"TestRun_{fileSuffix}.txt"), false);
+            logFile.WriteLine("Переналадка Длительности ПТО лямбда мю f1 Y1 Y2 Y3");
+
+            foreach (var changeover in changeoverScenarios)
+            {
+                Dictionary<int, List<List<int>>> changeoverDict = new Dictionary<int, List<List<int>>>();
+                for (int device = 0; device < deviceCount; device++)
+                    changeoverDict[device] = ListUtils.MatrixIntDeepCopy(changeover.Value);
+
+                foreach (var processing in processingScenarios)
                 {
-                    temp = (rand.Next(10) > 5) ? 150 : 100;
+                    List<List<int>> processingTime = ListUtils.MatrixIntDeepCopy(processing.Value);
 
-                    timeSets.Add(new List<int>());
-                    for (int j = 0; j < n_kom_q; j++)
+                    foreach (var prem in premScenarios)
                     {
-                        timeSets[i].Add((j + 1) * temp);
-                    }
-                }
-                foreach (var n_kom_s in N_komplect_sostav)
-                {
-                    foreach (int _dataTypesCount in _dataTypesCountArray)
-                    {
-                        compositionSets = new List<List<int>>();
-                        for (int i = 0; i < n_kom; i++)
-                        {
-                            compositionSets.Add(new List<int>());
-                            for (var dataType = 0; dataType < _dataTypesCount; dataType++)
+                        int[,] durations = new int[deviceCount, preMTypesCount];
+                        int[,] costs = new int[deviceCount, preMTypesCount];
+                        for (int device = 0; device < deviceCount; device++)
+                            for (int preMType = 0; preMType < preMTypesCount; preMType++)
                             {
-                                temp = rand.Next(10);
-                                if (temp > 5)
+                                durations[device, preMType] = prem.Item2[preMType];
+                                costs[device, preMType] = prem.Item3[preMType];
+                            }
+
+                        foreach (double? restoreRate in restoreValues)
+                        {
+                            foreach (double? failureRate in failureValues)
+                            {
+                                Config baseConfig = new Config(
+                                    dataTypesCount,
+                                    deviceCount,
+                                    bufferValue,
+                                    processingTime,
+                                    changeoverDict,
+                                    fixedBatches,
+                                    batchCountValue
+                                );
+
+                                PreMConfig preMConfig = new PreMConfig(
+                                    baseConfig,
+                                    Enumerable.Repeat(0, deviceCount).ToList(),
+                                    Enumerable.Repeat(failureRate.Value, deviceCount).ToList(),
+                                    Enumerable.Repeat(restoreRate.Value, deviceCount).ToList(),
+                                    beta
+                                );
+
+                                TypedPreMConfiguration typedConfig = new TypedPreMConfiguration(preMConfig)
                                 {
-                                    compositionSets[i].Add(n_kom_s);
+                                    PreMaintenceTypesCount = preMTypesCount,
+                                    InactionCosts = Enumerable.Repeat(1, deviceCount).ToList(),
+                                    PreMaintenanceCosts = costs,
+                                    PreMaintenanceDurations = durations
+                                };
+
+                                List<int> batchCountList = Enumerable.Repeat(batchCountValue, dataTypesCount).ToList();
+                                FirstLevel firstLevel = new FirstLevel(baseConfig, batchCountList);
+                                string runName = $"TestRun_{changeover.Key}_{processing.Key}_{prem.Item1}_{restoreRate.Value}_{failureRate.Value}_";
+                                ScheduleBuildingResult result = firstLevel.GenetateSolutionWithTypedPremaintenance(runName, typedConfig);
+
+                                string prefix = $"{changeover.Key} {processing.Key} {prem.Item1} {failureRate.Value} {restoreRate.Value}";
+                                if (result is null)
+                                {
+                                    logFile.WriteLine($"{prefix} -");
                                 }
                                 else
                                 {
-                                    compositionSets[i].Add(2);
-                                }
-                            }
-                        }
-
-                        foreach (var _deviceCount in _deviceCountArray)
-                        {
-
-                            // Выводим информацию в файл
-                            fileOut.WriteLine($"Kq = {n_kom_q}");
-                            fileOut.WriteLine($"Kqs= {n_kom_s}");
-                            fileOut.WriteLine($"N  = {_dataTypesCount};\tL = {_deviceCount}");
-                            fileOut.WriteLine($"Times");
-                            fileOut.WriteLine(ListUtils.MatrixIntToString(timeSets, "\t"));
-                            fileOut.WriteLine($"Compositions");
-                            fileOut.WriteLine(ListUtils.MatrixIntToString(compositionSets, "\t"));
-
-                            // Перебираем каждой элемент вектора, как время выполнения задания
-                            foreach (var _maxProccessingTime in time)
-                            {
-
-                                // Перебираем каждой элемент вектора, как время переналадки приборов
-                                foreach (var _maxChangeoverTime in time)
-                                {
-
-                                    // Формируем расписание
-                                    Shedule.deviceCount = _deviceCount;
-                                    Shedule.changeoverTime = OldChangeoverTimeGenerator(_maxChangeoverTime, _deviceCount, _dataTypesCount);
-                                    Shedule.proccessingTime = OldProccessingTimeGenerator(_maxProccessingTime, _deviceCount, _dataTypesCount);
-                                    
-                                    // Создаём экземпляр конфигурационной структуры
-                                    Config config = new Config(
-                                        _dataTypesCount,
-                                        _deviceCount,
-                                        buffer,
-                                        OldProccessingTimeGenerator(_maxProccessingTime, _deviceCount, _dataTypesCount),
-                                        Config.ChangeoverTimeConverter(OldChangeoverTimeGenerator(_maxChangeoverTime, _deviceCount, _dataTypesCount)),
-                                        isFixedBatches
-                                    );
-                                    
-                                    // Создаём вектор длиной в количество типов данных наполненный нулями
-                                    List<int> _batchCountList = CreateBatchCountList(0, _dataTypesCount);
-
-                                    for (var dataType = 0; dataType < _dataTypesCount; dataType++)
+                                    string line = $"{prefix} {result.Makespan}";
+                                    TypedPreMaintenceSecondLevelOutput output = (TypedPreMaintenceSecondLevelOutput)result.Schedule;
+                                    for (int preMType = 0; preMType < preMTypesCount; preMType++)
                                     {
-                                        batchCount = 0;
-                                        for (int i = 0; i < n_kom; i++)
-                                        {
-                                            batchCount += compositionSets[i][dataType];
-                                        }
-                                        _batchCountList[dataType] = batchCount * n_kom_q;
+                                        int count = 0;
+                                        for (int device = 0; device < deviceCount; device++)
+                                            foreach (int status in output.Yl_Matrixes[device][preMType])
+                                                count += status;
+                                        line += $" {count}";
                                     }
-
-                                    var firstLevel = new FirstLevel(config, _batchCountList);
-                                    var result = firstLevel.GenetateSolutionForAllTypesSecondAlgorithm();
-
-                                    //var gaa = new GAA(_countType, listCountButches, checkBox1.Checked, batchCount);
-                                    //var resultGaa = gaa.calcSetsFitnessList(checkBox2.Checked, GenerationCounter.Value, (int)numericUpDown2.Value);
-
-                                    //fileOut.WriteLine(first + "\t" + top + "\t" + resultGaa);
-                                    fileOut.WriteLine($"first:{result[0]};\ttop:{result[1]}.\t");
+                                    logFile.WriteLine(line);
                                 }
+                                logFile.Flush();
                             }
                         }
                     }
                 }
             }
-            fileOut.Close();
 
-            MessageBox.Show("Тестовый прогон завершен");
+            logFile.Close();
+            MessageBox.Show("Тестовый прогон завершён");
         }
 
         /// <summary>
@@ -986,7 +974,10 @@ namespace newAlgorithm
             TypedPreMConfiguration config = TypedPreMConfiguration();
             string logFileName = "TypedPreM";
 
-            if (clb_loopedVariables.CheckedItems.Count > 0)
+            bool loopFailure = clb_loopedVariables.GetItemChecked(0);
+            bool loopRestore = clb_loopedVariables.GetItemChecked(1);
+
+            if (loopFailure || loopRestore)
             {
                 string projectFolder = Path.GetFullPath(Path.Combine(Application.StartupPath, @"..\..\..\"));
                 string resultsFolder = Path.Combine(projectFolder, "results");
@@ -998,31 +989,45 @@ namespace newAlgorithm
                 string logFileNameSuffix = $"{DateTime.Now.Day}_{DateTime.Now.Month}_{DateTime.Now.Year}_{DateTime.Now.Hour}_{DateTime.Now.Minute}_{DateTime.Now.Second}.log";
                 ILogger logger = new FileLogger(Path.Combine(resultsFolder, logFileName + logFileNameSuffix), true);
 
-                string resultsHeader = "mu F1 ";
+                string resultsHeader = "";
+                if (loopFailure) resultsHeader += "lambda ";
+                if (loopRestore) resultsHeader += "mu ";
+                resultsHeader += "F1 ";
                 for(int preMType = 0; preMType < config.PreMaintenceTypesCount; )
                 {
                     resultsHeader += $"Yl{++preMType}";
                 }
+                logger.Print(resultsHeader);
 
-                double start = (double) numeric_mu_start.Value;
-                double end = (double) numeric_mu_end.Value;
-                double step = (double) numeric_mu_step.Value;
+                List<double?> failureValues = BuildSweepValues(loopFailure, numeric_mu_start.Value, numeric_mu_end.Value, numeric_mu_step.Value);
+                List<double?> restoreValues = BuildSweepValues(loopRestore, numeric_restore_start.Value, numeric_restore_end.Value, numeric_restore_step.Value);
 
                 
-                for (double current = start; current <= end; current += step)
+                foreach (double? failureRate in failureValues)
                 {
-                    for (int device = 0; device < config.deviceCount; device++)
+                    if (failureRate.HasValue)
+                        for (int device = 0; device < config.deviceCount; device++)
+                            config.failureRates[device] = failureRate.Value;
+
+                    foreach (double? restoreRate in restoreValues)
                     {
-                        config.failureRates[device] = current;
-                    }
-                    ScheduleBuildingResult result = firstLevel.GenetateSolutionWithTypedPremaintenance($"{logFileName}_{current}_", config);
+                        if (restoreRate.HasValue)
+                            for (int device = 0; device < config.deviceCount; device++)
+                                config.restoringDevice[device] = restoreRate.Value;
+
+                        string label = "";
+                        if (failureRate.HasValue) label += $"{failureRate.Value} ";
+                        if (restoreRate.HasValue) label += $"{restoreRate.Value} ";
+                        label = label.Trim();
+
+                    ScheduleBuildingResult result = firstLevel.GenetateSolutionWithTypedPremaintenance($"{logFileName}_{label.Replace(' ', '_')}_", config);
                     if(result is null)
                     {
-                        logger.Print($"{current} -");
+                        logger.Print($"{label} -");
                     }
                     else
                     {
-                        string resultString = $"{current} {result.Makespan}";
+                        string resultString = $"{label} {result.Makespan}";
                         for (int preMtype = 0;  preMtype < config.PreMaintenceTypesCount; preMtype++)
                         {
                             int preMCount = 0;
@@ -1038,7 +1043,8 @@ namespace newAlgorithm
                         }
                         logger.Print(resultString);
                     }
-                    
+                    }
+
                 }
 
                 ((FileLogger)logger).Dispose();
@@ -1047,6 +1053,31 @@ namespace newAlgorithm
             {
                 firstLevel.GenetateSolutionWithTypedPremaintenance(logFileName, config);
             }
+        }
+
+        private static List<double?> BuildSweepValues(bool active, decimal start, decimal end, decimal step)
+        {
+            var values = new List<double?>();
+
+            if (!active)
+            {
+                values.Add(null);
+                return values;
+            }
+
+            if (step <= 0)
+            {
+                values.Add((double)start);
+                return values;
+            }
+
+            for (decimal current = start; current <= end; current += step)
+                values.Add((double)current);
+
+            if (values.Count == 0)
+                values.Add((double)start);
+
+            return values;
         }
 
         #region Обработка рандомизаций и выбора вкладки
