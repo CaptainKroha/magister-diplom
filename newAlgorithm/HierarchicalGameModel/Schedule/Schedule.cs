@@ -159,30 +159,60 @@ namespace magisterDiplom
         protected bool OptimizeLocaly(int swapCount = 999999)
         {
 
-            List<Batch> bestSchedule = new List<Batch>(schedule);
+            List<Batch> savedSchedule = new List<Batch>(schedule);
 
-            Calculate();
-            int bestValue = F2_criteria();
 
-            for (int batch = ScheduleSize() - 1; batch > 0 && swapCount > 0; batch--, swapCount--)
+            List<Batch> bestSchedule = null;
+            int bestF2 = int.MaxValue;
+
+            if (AreSameTypeBatchesNear())
             {
+                bestSchedule = new List<Batch>(schedule);
+                Calculate();
+                bestF2 = F2_criteria();
 
-                // Выполняем перестановку
+            }
+
+            for (int batch = ScheduleSize() - 1; batch > 0 && (swapCount > 0 || bestF2 == int.MaxValue); batch--, swapCount--)
+            {
                 (schedule[batch - 1], schedule[batch]) = (schedule[batch], schedule[batch - 1]);
+                if (AreSameTypeBatchesNear())
+                {
+                    continue;
+                }
 
                 Calculate();
                 int newValue = F2_criteria();
 
-                if (newValue < bestValue)
+                if (newValue < bestF2)
                 {
-                    // Переопределяем лучшее расписание
                     bestSchedule = new List<Batch>(schedule);
-                    bestValue = newValue;
+                    bestF2 = newValue;
                 }
             }
 
-            schedule = bestSchedule;
+            if (bestF2 == int.MaxValue)
+            {
+                schedule = savedSchedule;
+                return false;
+            }
+
+            schedule = new List<Batch>(bestSchedule);
+            Calculate();
             return true;
+        }
+
+        protected bool AreSameTypeBatchesNear()
+        {
+            for(int left = 0; left < ScheduleSize() - 1; left++)
+            {
+                for(int right = 1; right < ScheduleSize(); right++)
+                {
+                    if (BatchType(left) == BatchType(right)) return true;
+                }
+            }
+
+            return false;
         }
 
         protected int ScheduleSize()

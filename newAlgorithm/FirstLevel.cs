@@ -1347,6 +1347,7 @@ namespace newAlgorithm
                 // Логируем лучший критерий f1
                 file.WriteLine(f1Optimal);
                 file.Close();
+
                 if(Form1.loggingOn) MessageBox.Show("Решения найдены f1 = " + f1Optimal);
 
                 _logger.Print("=+=+=+=+ Найденное оптимальное решение =+=+=+=+");
