@@ -90,6 +90,11 @@ namespace newAlgorithm
         /// </summary>
         private ExcelVisualizer _visualizer;
 
+        /// <summary>
+        /// Объект для визуализации результатов с типизированным ПТО в Excel
+        /// </summary>
+        private TypedPreMVizualizer _typedVisualizer;
+
         private ILogger _logger;
 
         private PreMSchedule.SecondLevelOutput optimalSlSolution;
@@ -469,22 +474,22 @@ namespace newAlgorithm
                 {
 
                     // Если установлен флаг визуализации
-                    //if (Form1.vizualizationOn)
-                    //{
-                    //    // Визуализируем промежуточные данные через ExcelVisualizer
-                    //    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
-                    //}
+                    if (Form1.vizualizationOn)
+                    {
+                        // Визуализируем промежуточные данные через типизированный Visualizer
+                        _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber);
+                    }
                     var fBuf = secondLevel.Makespan;
                     string s = ListUtils.MatrixIntToString(tempM, ", ", "", ";");
                     file.Write(s + " " + fBuf);
                     // MessageBox.Show(s + " Время обработки " + fBuf);
                     if (fBuf < f1Optimal)
                     {
-                        //if (Form1.vizualizationOn)
-                        //{
-                        //   _visualizer.MarkAsOptimal(compositionNumber);
-                        //}
-                        
+                        if (Form1.vizualizationOn)
+                        {
+                            _typedVisualizer.MarkAsOptimal(compositionNumber);
+                        }
+
 
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(tempM);
                         solutionFlag = true;
@@ -496,19 +501,19 @@ namespace newAlgorithm
 
                     // Увеличиваем счётчик составов пакетов заданий
                     compositionNumber++;
-                    
+
                     file.WriteLine();
 
                 }
-                //else if (Form1.vizualizationOn && Form1.showND)
-                //{
-                //    // Визуализируем промежуточные данные (неудачное расписание)
-                //    _visualizer.VisualizeSimplePreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
-                //        false);
+                else if (Form1.vizualizationOn && Form1.showND)
+                {
+                    // Визуализируем промежуточные данные (неудачное расписание)
+                    _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput, secondLevel, tempM, config, ref helpRowNumber,
+                        false);
 
-                //    //    // Увеличиваем счётчик составов пакетов заданий
-                //    compositionNumber++;
-                //}
+                    // Увеличиваем счётчик составов пакетов заданий
+                    compositionNumber++;
+                }
             }
         }
 
@@ -1023,10 +1028,11 @@ namespace newAlgorithm
             // Инициализируем значения
             // compositionNumber = 1;
 
-            // if (Form1.vizualizationOn) {
-            //     //Инициализируем объект для работы с Excel через Visualizer
-            //     _visualizer.Initialize(config);
-            // }
+            if (Form1.vizualizationOn) {
+                // Инициализируем объект для работы с Excel через типизированный Visualizer
+                _typedVisualizer = new TypedPreMVizualizer(this.config);
+                _typedVisualizer.Initialize(config);
+            }
 
             // Переопределяем значение оптимального критерий f1
             f1Optimal = int.MaxValue;
@@ -1109,11 +1115,11 @@ namespace newAlgorithm
                     // MessageBox.Show(ListUtils.MatrixIntToString(PrimeMatrixA, ", ", "", ";") + " Время обработки " + f1Current);
 
                     // Если установлен флаг визуализации
-                    // if (Form1.vizualizationOn)
-                    // {
-                    //      // Визуализируем промежуточные данные
-                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
-                    // }
+                    if (Form1.vizualizationOn)
+                    {
+                        // Визуализируем промежуточные данные
+                        _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber);
+                    }
 
                     compositionNumber++;
 
@@ -1122,10 +1128,10 @@ namespace newAlgorithm
                     {
 
                         // Если установлен флаг визуализации
-                        //if (Form1.vizualizationOn)
-                        //{
-                        //    _visualizer.MarkAsOptimal(compositionNumber - 1);
-                        //}
+                        if (Form1.vizualizationOn)
+                        {
+                            _typedVisualizer.MarkAsOptimal(compositionNumber - 1);
+                        }
                         // Копируем матрицу с лучшим решением
                         bestMatrixA = ListUtils.MatrixIntDeepCopy(PrimeMatrixA);
 
@@ -1139,14 +1145,14 @@ namespace newAlgorithm
                         // Логируем нахождение лучшего решения
                         file.Write(" +");
 
-                    } 
-                    // else if (Form1.vizualizationOn && Form1.showND)
-                    // {
-                    //      // Визуализируем промежуточные данные
-                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
-                    //
-                    //    compositionNumber++;
-                    // }
+                    }
+                    else if (Form1.vizualizationOn && Form1.showND)
+                    {
+                        // Визуализируем промежуточные данные
+                        _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput, secondLevel, PrimeMatrixA, config, ref helpRowNumber, false);
+
+                        compositionNumber++;
+                    }
                 }
 
                 // Инициализируем матрицу _a1
@@ -1236,13 +1242,13 @@ namespace newAlgorithm
                                 TypedPreMShedule.TypedPreMaintenceSecondLevelOutput secondLevelOutput3 = (TypedPreMShedule.TypedPreMaintenceSecondLevelOutput)secondLevel.Build(GetMForAMatrix(tempA), tempA);
                                 if (!secondLevelOutput3.Success)
                                 {
-                                    // if (Form1.vizualizationOn && Form1.showND)
-                                    // {
-                                    //      // Визуализируем промежуточные данные
-                                    //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber, false);
-                                    //     compositionNumber++;
-                                    // }
-                                    
+                                    if (Form1.vizualizationOn && Form1.showND)
+                                    {
+                                        // Визуализируем промежуточные данные
+                                        _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber, false);
+                                        compositionNumber++;
+                                    }
+
                                     // Пропускаем обработку
                                     continue;
                                 }
@@ -1250,11 +1256,11 @@ namespace newAlgorithm
                                 // Получаем критерий f1
                                 var fBuf = secondLevel.Makespan;
 
-                                // if (Form1.vizualizationOn)
-                                // {
-                                //      // Визуализируем промежуточные данные
-                                //     _visualizer.VisualizeResult(compositionNumber, secondLevelOutput3 , secondLevel, tempA, config, ref helpRowNumber);
-                                // }
+                                if (Form1.vizualizationOn)
+                                {
+                                    // Визуализируем промежуточные данные
+                                    _typedVisualizer.VisualizeTypedPreMResult(compositionNumber, secondLevelOutput3, secondLevel, tempA, config, ref helpRowNumber);
+                                }
 
                                 compositionNumber++;
 
